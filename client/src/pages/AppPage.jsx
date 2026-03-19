@@ -164,7 +164,7 @@ export default function AppPage() {
           <MemberList members={filtered} onEdit={m=>{setEditTarget(m);setShowForm(true);}} onDelete={handleDelete} />
         )}
 
-        {tab==='admin' && isAdmin && <UserManage />}
+        {tab==='admin' && isAdmin && <UserManage members={members} />}
       </div>
 
       {showForm && (

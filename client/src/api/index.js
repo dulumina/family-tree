@@ -35,7 +35,8 @@ export const membersApi = {
 };
 export const usersApi = {
   getAll:    () => api.get('/users'),
-  setRole:   (id,role) => api.patch(`/users/${id}/role`, { role }),
+  create:    d => api.post('/users', d),
+  update:    (id,d) => api.patch(`/users/${id}/role`, d),
   remove:    id => api.delete(`/users/${id}`),
 };
 

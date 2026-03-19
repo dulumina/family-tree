@@ -3,7 +3,7 @@ import { membersApi } from '../../api';
 
 const PHOTOS = ['👴','👵','👨','👩','🧑','👧','👦','🧓','👶','🧔'];
 
-function SearchSelect({ label, placeholder, initialIds, single, members, onSelect, excludeId }) {
+export function SearchSelect({ label, placeholder, initialIds, single, members, onSelect, excludeId }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
