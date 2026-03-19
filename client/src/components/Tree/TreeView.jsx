@@ -25,6 +25,7 @@ export default function TreeView({ members, selected, onSelect }) {
   const CX = 600, CY = 50;
 
   const edges = [];
+  const handledSpouses = new Set();
   members.forEach(m => {
     (m.parentIds || []).forEach(pid => {
       if (pos[pid] && pos[m.id]) {
@@ -32,9 +33,15 @@ export default function TreeView({ members, selected, onSelect }) {
         edges.push({ type:'parent', x1:CX+p.x+NODE_W/2, y1:CY+p.y+NODE_H, x2:CX+c.x+NODE_W/2, y2:CY+c.y });
       }
     });
-    if (m.spouse_id && pos[m.spouse_id] && pos[m.id] && m.id < m.spouse_id) {
-      const a = pos[m.id], b = pos[m.spouse_id];
-      edges.push({ type:'spouse', x1:CX+a.x+NODE_W, y1:CY+a.y+NODE_H/2, x2:CX+b.x, y2:CY+b.y+NODE_H/2 });
+
+    if (m.spouse_id && pos[m.spouse_id] && pos[m.id]) {
+      const pair = [m.id, m.spouse_id].sort((a,b)=>a-b).join('-');
+      if (!handledSpouses.has(pair)) {
+        handledSpouses.add(pair);
+        const a = pos[m.id], b = pos[m.spouse_id];
+        const [left, right] = a.x < b.x ? [a, b] : [b, a];
+        edges.push({ type:'spouse', x1:CX+left.x+NODE_W, y1:CY+left.y+NODE_H/2, x2:CX+right.x, y2:CY+right.y+NODE_H/2 });
+      }
     }
   });
 
