@@ -9,7 +9,7 @@ import MemberForm from '../components/Members/MemberForm';
 import UserManage from '../components/Admin/UserManage';
 import { useToast } from '../components/UI/Toast';
 
-const genLabel = g => ['G1 Kakek/Nenek','G2 Orang Tua','G3 Anak','G4 Cucu','G5+'][g]??`G${g+1}`;
+const genLabel = g => `Generasi ${g+1}`;
 
 export default function AppPage() {
   const [tab, setTab] = useState('tree');
@@ -90,17 +90,24 @@ export default function AppPage() {
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari anggota keluarga..."
             style={{ width:'100%', padding:'8px 12px 8px 34px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14, outline:'none', boxSizing:'border-box' }} />
         </div>
-        <div style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
-          <span style={{ fontSize:12, color:'#64748b' }}>Lapisan:</span>
-          {allGens.map(g=>(
-            <button key={g} onClick={()=>toggleGen(g)}
-              style={{ padding:'5px 12px', borderRadius:20, border:'1.5px solid #6366f1',
-                background: visGens.includes(g)?'#6366f1':'transparent',
-                color: visGens.includes(g)?'#fff':'#6366f1',
-                fontSize:12, fontWeight:600, cursor:'pointer' }}>
-              {genLabel(g)}
-            </button>
-          ))}
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => document.getElementById('gen-dropdown').style.display = document.getElementById('gen-dropdown').style.display === 'none' ? 'block' : 'none'}
+            style={{ padding:'8px 16px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}>
+            <span>📂 Lapisan ({visGens.length})</span>
+            <span style={{ fontSize:10 }}>▼</span>
+          </button>
+          <div id="gen-dropdown" style={{ display:'none', position:'absolute', top:'100%', right:0, background:'#fff', border:'1.5px solid #e2e8f0', borderRadius:12, marginTop:8, padding:10, boxShadow:'0 10px 25px #0002', zIndex:100, minWidth:180 }}>
+            {allGens.map(g => (
+              <label key={g} style={{ display:'flex', alignItems:'center', gap:10, padding:'6px 8px', borderRadius:8, cursor:'pointer', fontSize:14, background: visGens.includes(g)?'#f5f3ff':'transparent' }}>
+                <input type="checkbox" checked={visGens.includes(g)} onChange={() => toggleGen(g)} style={{ accentColor:'#6366f1' }} />
+                <span style={{ color: visGens.includes(g)?'#6366f1':'#475569', fontWeight: visGens.includes(g)?600:400 }}>{genLabel(g)}</span>
+              </label>
+            ))}
+            <div style={{ borderTop:'1px solid #f1f5f9', marginTop:8, paddingTop:8, display:'flex', gap:8 }}>
+              <button onClick={() => setVisGens(allGens)} style={{ flex:1, fontSize:11, padding:4, borderRadius:6, border:'1px solid #e2e8f0', background:'#f8fafc', cursor:'pointer' }}>Semua</button>
+              <button onClick={() => setVisGens([])} style={{ flex:1, fontSize:11, padding:4, borderRadius:6, border:'1px solid #e2e8f0', background:'#f8fafc', cursor:'pointer' }}>Kosong</button>
+            </div>
+          </div>
         </div>
         {isEditor && (
           <button onClick={()=>{setEditTarget(null);setShowForm(true);}}

@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 export default function MemberList({ members, onEdit, onDelete }) {
   const { isAdmin, isEditor } = useAuth();
   const gens = [...new Set(members.map(m=>m.generation))].sort((a,b)=>a-b);
-  const genLabel = g => ['Gen 1 — Kakek/Nenek','Gen 2 — Orang Tua','Gen 3 — Anak','Gen 4 — Cucu','Gen 5+'][g]??`Gen ${g+1}`;
+  const genLabel = g => `Generasi ${g+1}`;
 
   return (
     <div>
