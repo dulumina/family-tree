@@ -27,17 +27,14 @@ export default function MemberForm({ members, initial, onSave, onClose }) {
         </div>
       ))}
 
-      {[['Jenis Kelamin','gender',[['male','Laki-laki'],['female','Perempuan']]],
-        ['Generasi','generation',[[0,'Gen 1 - Kakek/Nenek'],[1,'Gen 2 - Orang Tua'],[2,'Gen 3 - Anak'],[3,'Gen 4 - Cucu'],[4,'Gen 5+']]]
-      ].map(([lbl,key,opts])=>(
-        <div key={key} style={{ marginBottom:12 }}>
-          <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>{lbl}</label>
-          <select value={f[key]} onChange={e=>s(key, key==='generation'?+e.target.value:e.target.value)}
-            style={{ width:'100%', padding:'9px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14 }}>
-            {opts.map(([v,l])=><option key={v} value={v}>{l}</option>)}
-          </select>
-        </div>
-      ))}
+      <div style={{ marginBottom:12 }}>
+        <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Jenis Kelamin</label>
+        <select value={f.gender} onChange={e=>s('gender', e.target.value)}
+          style={{ width:'100%', padding:'9px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14 }}>
+          <option value="male">Laki-laki</option>
+          <option value="female">Perempuan</option>
+        </select>
+      </div>
 
       <div style={{ marginBottom:12 }}>
         <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Orang Tua</label>
