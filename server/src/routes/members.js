@@ -13,7 +13,18 @@ function getMemberFull(id) {
 
 // GET /api/members
 router.get('/', auth(), (req, res) => {
-  const rows = db.prepare('SELECT * FROM members ORDER BY generation, id').all();
+  const { q } = req.query;
+  let query = 'SELECT * FROM members';
+  let params = [];
+  
+  if (q) {
+    query += ' WHERE name LIKE ?';
+    params.push(`%${q}%`);
+  }
+  
+  query += ' ORDER BY generation, id';
+  
+  const rows = db.prepare(query).all(...params);
   const parents = db.prepare('SELECT * FROM member_parents').all();
   const result = rows.map(m => ({
     ...m,

@@ -28,7 +28,7 @@ export const authApi = {
   register: d => api.post('/auth/register', d),
 };
 export const membersApi = {
-  getAll:  () => api.get('/members'),
+  getAll:  (q='') => api.get(`/members${q ? `?q=${encodeURIComponent(q)}` : ''}`),
   create:  d  => api.post('/members', d),
   update:  (id,d) => api.put(`/members/${id}`, d),
   remove:  id => api.delete(`/members/${id}`),

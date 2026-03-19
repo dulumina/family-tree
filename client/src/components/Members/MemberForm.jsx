@@ -1,11 +1,83 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { membersApi } from '../../api';
 
 const PHOTOS = ['👴','👵','👨','👩','🧑','👧','👦','🧓','👶','🧔'];
+
+function SearchSelect({ label, placeholder, initialIds, single, members, onSelect, excludeId }) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      if (!open) return;
+      setLoading(true);
+      try {
+        const { data } = await membersApi.getAll(query);
+        setResults(data.filter(m => m.id !== excludeId));
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [query, open, excludeId]);
+
+  useEffect(() => {
+    const clickOut = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', clickOut);
+    return () => document.removeEventListener('mousedown', clickOut);
+  }, []);
+
+  const selectedMembers = initialIds.map(id => members.find(m => m.id === id)).filter(Boolean);
+
+  const toggle = (m) => {
+    if (single) {
+      onSelect(m.id === initialIds[0] ? [] : [m.id]);
+      setOpen(false);
+      setQuery('');
+    } else {
+      const isSelected = initialIds.includes(m.id);
+      onSelect(isSelected ? initialIds.filter(id => id !== m.id) : [...initialIds, m.id]);
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: 12, position: 'relative' }} ref={containerRef}>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 4 }}>{label}</label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '7px 10px', borderRadius: 10, border: '1.5px solid #e2e8f0', background: '#fff' }} onClick={() => setOpen(true)}>
+        {selectedMembers.map(m => (
+          <div key={m.id} style={{ background: '#eef2ff', color: '#6366f1', padding: '2px 8px', borderRadius: 6, fontSize: 12, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
+            {m.photo} {m.name}
+            <span style={{ cursor: 'pointer', fontSize: 14 }} onClick={(e) => { e.stopPropagation(); toggle(m); }}>×</span>
+          </div>
+        ))}
+        <input value={query} onChange={e => {setQuery(e.target.value); setOpen(true);}} placeholder={selectedMembers.length ? '' : placeholder}
+          style={{ border: 'none', outline: 'none', background: 'transparent', flex: 1, minWidth: 100, fontSize: 14 }} />
+      </div>
+      {open && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 10, marginTop: 4, maxHeight: 200, overflowY: 'auto', zIndex: 10, boxShadow: '0 4px 12px #0002' }}>
+          {loading && <div style={{ padding: 10, fontSize: 12, color: '#64748b' }}>Mencari...</div>}
+          {!loading && results.length === 0 && <div style={{ padding: 10, fontSize: 12, color: '#64748b' }}>Tidak ditemukan</div>}
+          {!loading && results.map(m => (
+            <div key={m.id} onClick={() => toggle(m)}
+              style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, background: initialIds.includes(m.id) ? '#f1f5f9' : 'transparent' }}>
+              <span style={{ fontSize: 18 }}>{m.photo}</span>
+              <span>{m.name}</span>
+              {initialIds.includes(m.id) && <span style={{ marginLeft: 'auto', color: '#6366f1' }}>✓</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function MemberForm({ members, initial, onSave, onClose }) {
   const [f, setF] = useState(initial || {
     name:'', gender:'male', born_year:'', died_year:'', photo:'🧑',
-    generation:0, notes:'', spouse_id:'', parentIds:[]
+    notes:'', spouse_id:null, parentIds:[]
   });
   const s = (k,v) => setF(p=>({...p,[k]:v}));
 
@@ -36,31 +108,11 @@ export default function MemberForm({ members, initial, onSave, onClose }) {
         </select>
       </div>
 
-      <div style={{ marginBottom:12 }}>
-        <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Orang Tua</label>
-        <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-          {members.filter(m=>m.id!==initial?.id).map(m=>(
-            <label key={m.id} style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, cursor:'pointer',
-              background: f.parentIds.includes(m.id)?'#eef2ff':'#f8fafc',
-              padding:'4px 8px', borderRadius:8, border:`1px solid ${f.parentIds.includes(m.id)?'#6366f1':'#e2e8f0'}` }}>
-              <input type="checkbox" checked={f.parentIds.includes(m.id)}
-                onChange={e=>s('parentIds', e.target.checked?[...f.parentIds,m.id]:f.parentIds.filter(x=>x!==m.id))} />
-              {m.photo} {m.name}
-            </label>
-          ))}
-        </div>
-      </div>
+      <SearchSelect label="Orang Tua" placeholder="Cari orang tua..." initialIds={f.parentIds} members={members} excludeId={initial?.id}
+        onSelect={ids => s('parentIds', ids)} />
 
-      <div style={{ marginBottom:12 }}>
-        <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Pasangan</label>
-        <select value={f.spouse_id||''} onChange={e=>s('spouse_id',e.target.value||null)}
-          style={{ width:'100%', padding:'9px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14 }}>
-          <option value=''>— Tidak ada —</option>
-          {members.filter(m=>m.id!==initial?.id).map(m=>(
-            <option key={m.id} value={m.id}>{m.photo} {m.name}</option>
-          ))}
-        </select>
-      </div>
+      <SearchSelect label="Pasangan" placeholder="Cari pasangan..." initialIds={f.spouse_id?[f.spouse_id]:[]} single members={members} excludeId={initial?.id}
+        onSelect={ids => s('spouse_id', ids[0]||null)} />
 
       <div style={{ marginBottom:20 }}>
         <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Catatan</label>
