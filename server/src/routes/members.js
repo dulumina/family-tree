@@ -45,21 +45,32 @@ router.post('/', auth('editor'), (req, res) => {
   const { name,gender,born_year,died_year,photo,generation,notes,spouse_id,parentIds=[] } = req.body;
   if (!name || !gender) return res.status(400).json({ error: 'Nama dan gender wajib diisi' });
 
-  const r = db.prepare(
-    `INSERT INTO members (name,gender,born_year,died_year,photo,generation,notes,spouse_id,created_by)
-     VALUES (?,?,?,?,?,?,?,?,?)`
-  ).run(name,gender,born_year||null,died_year||null,photo||'🧑',generation||0,notes||null,spouse_id||null,req.user.id);
+  try {
+    const r = db.prepare(
+      `INSERT INTO members (name,gender,born_year,died_year,photo,generation,notes,spouse_id,created_by)
+       VALUES (?,?,?,?,?,?,?,?,?)`
+    ).run(name,gender,born_year||null,died_year||null,photo||'🧑',generation||0,notes||null,spouse_id||null,req.user.id);
 
-  const newId = r.lastInsertRowid;
+    const newId = r.lastInsertRowid;
 
-  if (spouse_id) {
-    db.prepare('UPDATE members SET spouse_id = ? WHERE id = ?').run(newId, spouse_id);
+    if (spouse_id) {
+      db.prepare('UPDATE members SET spouse_id = ? WHERE id = ?').run(newId, spouse_id);
+    }
+    const insertParent = db.prepare('INSERT OR IGNORE INTO member_parents VALUES (?,?)');
+    parentIds.forEach(pid => insertParent.run(newId, pid));
+
+    res.status(201).json(getMemberFull(newId));
+  } catch (error) {
+    console.error('Database Error:', error);
+    if (error.message.includes('FOREIGN KEY')) {
+      return res.status(400).json({ 
+        error: 'Gagal menambah data: ID pasangan atau ID user tidak valid. Silakan Logout dan Login kembali.' 
+      });
+    }
+    res.status(500).json({ error: 'Terjadi kesalahan pada server' });
   }
-  const insertParent = db.prepare('INSERT OR IGNORE INTO member_parents VALUES (?,?)');
-  parentIds.forEach(pid => insertParent.run(newId, pid));
-
-  res.status(201).json(getMemberFull(newId));
 });
+
 
 // PUT /api/members/:id
 router.put('/:id', auth('editor'), (req, res) => {
