@@ -6,7 +6,44 @@ function buildLayout(members) {
   const gens = [...new Set(members.map(m => m.generation))].sort((a,b)=>a-b);
   const pos = {};
   gens.forEach((g, gi) => {
-    const row = members.filter(m => m.generation === g);
+    let row = members.filter(m => m.generation === g);
+
+    // Sort to group siblings together
+    row.sort((a, b) => {
+      const pA = (a.parentIds || []).slice().sort().join(',');
+      const pB = (b.parentIds || []).slice().sort().join(',');
+      return pA.localeCompare(pB);
+    });
+
+    // Group spouses adjacently
+    const arranged = [];
+    const visited = new Set();
+    
+    row.forEach(m => {
+      if (visited.has(m.id)) return;
+      arranged.push(m);
+      visited.add(m.id);
+      
+      // Check if they refer to a spouse
+      const spId = m.spouse_id;
+      if (spId && !visited.has(spId)) {
+        const sp1 = row.find(s => s.id === spId);
+        if (sp1) {
+          arranged.push(sp1);
+          visited.add(sp1.id);
+        }
+      }
+      
+      // Check if someone else refers to them as a spouse
+      const sp2 = row.find(s => s.spouse_id === m.id && !visited.has(s.id));
+      if (sp2) {
+        arranged.push(sp2);
+        visited.add(sp2.id);
+      }
+    });
+
+    row = arranged;
+
     const totalW = row.length * NODE_W + (row.length - 1) * GAP_X;
     const sx = -totalW / 2;
     row.forEach((m, i) => { pos[m.id] = { x: sx + i * (NODE_W + GAP_X), y: gi * (NODE_H + GAP_Y) }; });
