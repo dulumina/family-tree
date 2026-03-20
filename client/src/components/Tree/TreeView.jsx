@@ -1,134 +1,141 @@
-import { useState, useRef, useCallback } from 'react';
-
-const NODE_W = 126, NODE_H = 88, GAP_X = 48, GAP_Y = 108;
-
-function buildLayout(members) {
-  const gens = [...new Set(members.map(m => m.generation))].sort((a,b)=>a-b);
-  const pos = {};
-  gens.forEach((g, gi) => {
-    let row = members.filter(m => m.generation === g);
-
-    // Sort to group siblings together
-    row.sort((a, b) => {
-      const pA = (a.parentIds || []).slice().sort().join(',');
-      const pB = (b.parentIds || []).slice().sort().join(',');
-      return pA.localeCompare(pB);
-    });
-
-    // Group spouses adjacently
-    const arranged = [];
-    const visited = new Set();
-    
-    row.forEach(m => {
-      if (visited.has(m.id)) return;
-      arranged.push(m);
-      visited.add(m.id);
-      
-      // Check if they refer to a spouse
-      const spId = m.spouse_id;
-      if (spId && !visited.has(spId)) {
-        const sp1 = row.find(s => s.id === spId);
-        if (sp1) {
-          arranged.push(sp1);
-          visited.add(sp1.id);
-        }
-      }
-      
-      // Check if someone else refers to them as a spouse
-      const sp2 = row.find(s => s.spouse_id === m.id && !visited.has(s.id));
-      if (sp2) {
-        arranged.push(sp2);
-        visited.add(sp2.id);
-      }
-    });
-
-    row = arranged;
-
-    const totalW = row.length * NODE_W + (row.length - 1) * GAP_X;
-    const sx = -totalW / 2;
-    row.forEach((m, i) => { pos[m.id] = { x: sx + i * (NODE_W + GAP_X), y: gi * (NODE_H + GAP_Y) }; });
-  });
-  return pos;
-}
+/* eslint-disable react/prop-types */
+import { useEffect, useRef } from 'react';
+import * as topola from 'topola';
+import * as d3 from 'd3';
 
 export default function TreeView({ members, selected, onSelect }) {
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const dragging = useRef(false);
-  const last = useRef(null);
-  const svgH = Math.max(...members.map(m=>m.generation), 0) * (NODE_H + GAP_Y) + NODE_H + 80;
+  const containerRef = useRef(null);
+  
+  useEffect(() => {
+    if (!containerRef.current || !members || members.length === 0) return;
+    
+    // Clear previous SVG contents
+    containerRef.current.innerHTML = '<svg id="topola-svg" width="100%" height="100%" style="user-select:none; cursor:grab;"></svg>';
+    
+    const indis = [];
+    const famsMap = new Map(); // key -> fam object
+    
+    const getFamId = (pids) => {
+       if (!pids || pids.length === 0) return null;
+       return pids.slice().sort().join('-');
+    };
 
-  const pos = buildLayout(members);
-  const CX = 600, CY = 50;
+    const assignRoles = (p1, p2) => {
+      let husb = null, wife = null;
+      const assign = (p) => {
+        if (!p) return;
+        if (p.gender === 'male' && !husb) husb = p.id;
+        else if (p.gender === 'female' && !wife) wife = p.id;
+        else if (!husb) husb = p.id;
+        else wife = p.id;
+      };
+      assign(p1);
+      assign(p2);
+      return { husb, wife };
+    };
 
-  const edges = [];
-  const handledSpouses = new Set();
-  members.forEach(m => {
-    (m.parentIds || []).forEach(pid => {
-      if (pos[pid] && pos[m.id]) {
-        const p = pos[pid], c = pos[m.id];
-        edges.push({ type:'parent', x1:CX+p.x+NODE_W/2, y1:CY+p.y+NODE_H, x2:CX+c.x+NODE_W/2, y2:CY+c.y });
+    // Construct Families
+    members.forEach(m => {
+      if (m.spouse_id) {
+        const id = getFamId([m.id, m.spouse_id]);
+        if (!famsMap.has(id)) {
+          const spouse = members.find(s => s.id === m.spouse_id);
+          const { husb, wife } = assignRoles(m, spouse);
+          famsMap.set(id, { id, husb: husb ? String(husb) : undefined, wife: wife ? String(wife) : undefined, children: [] });
+        }
+      }
+
+      if (m.parentIds && m.parentIds.length > 0) {
+        const id = getFamId(m.parentIds);
+        if (!famsMap.has(id)) {
+          const p1 = members.find(p => p.id === m.parentIds[0]);
+          const p2 = m.parentIds[1] ? members.find(p => p.id === m.parentIds[1]) : null;
+          const { husb, wife } = assignRoles(p1, p2);
+          famsMap.set(id, { id, husb: husb ? String(husb) : undefined, wife: wife ? String(wife) : undefined, children: [] });
+        }
+        famsMap.get(id).children.push(String(m.id));
       }
     });
 
-    if (m.spouse_id && pos[m.spouse_id] && pos[m.id]) {
-      const pair = [m.id, m.spouse_id].sort((a,b)=>a-b).join('-');
-      if (!handledSpouses.has(pair)) {
-        handledSpouses.add(pair);
-        const a = pos[m.id], b = pos[m.spouse_id];
-        const [left, right] = a.x < b.x ? [a, b] : [b, a];
-        edges.push({ type:'spouse', x1:CX+left.x+NODE_W, y1:CY+left.y+NODE_H/2, x2:CX+right.x, y2:CY+right.y+NODE_H/2 });
+    // Populate Individuals
+    members.forEach(m => {
+      let famc = undefined;
+      if (m.parentIds && m.parentIds.length > 0) {
+        famc = getFamId(m.parentIds);
       }
-    }
-  });
 
-  const onMD = e => { dragging.current=true; last.current={x:e.clientX-pan.x, y:e.clientY-pan.y}; };
-  const onMM = e => { if(dragging.current) setPan({x:e.clientX-last.current.x, y:e.clientY-last.current.y}); };
-  const onMU = () => { dragging.current=false; };
-  const onWheel = e => { e.preventDefault(); setZoom(z=>Math.min(2.5,Math.max(0.25,z-e.deltaY*.001))); };
+      const famsForIndi = [];
+      famsMap.forEach(fam => {
+        if (fam.husb === String(m.id) || fam.wife === String(m.id)) {
+          famsForIndi.push(fam.id);
+        }
+      });
+      
+      indis.push({
+        id: String(m.id),
+        firstName: m.name,
+        lastName: '',
+        sex: m.gender === 'male' ? 'M' : m.gender === 'female' ? 'F' : 'U',
+        birth: m.born_year ? { date: { year: parseInt(m.born_year) } } : undefined,
+        death: m.died_year ? { date: { year: parseInt(m.died_year) } } : undefined,
+        famc: famc,
+        fams: famsForIndi.length > 0 ? famsForIndi : undefined,
+      });
+    });
+
+    const json = { indis, fams: Array.from(famsMap.values()) };
+
+    // Use RelativesChart and start from the tree's root or any member to build context
+    const startIndi = String(members.length > 0 ? members[0].id : 1);
+
+    try {
+      const chart = topola.createChart({
+        json,
+        chartType: topola.RelativesChart,
+        renderer: topola.DetailedRenderer,
+        svgSelector: '#topola-svg',
+        indiCallback: (info) => {
+          const member = members.find(m => String(m.id) === info.id);
+          if (member) onSelect(member);
+        },
+        animate: true
+      });
+      
+      chart.render({ startIndi }).then(() => {
+        // Init D3 Drag and Zoom after topola renders
+        const svg = d3.select(containerRef.current).select('svg');
+        const g = svg.select('g');
+        
+        const zoomSetup = d3.zoom()
+          .scaleExtent([0.1, 4])
+          .on('zoom', (event) => {
+            g.attr('transform', event.transform);
+          });
+
+        svg.call(zoomSetup);
+        
+        // Grab Topola's initial transform to prevent jumping
+        let currentTransformStr = g.attr('transform');
+        if (currentTransformStr) {
+           const match = currentTransformStr.match(/translate\(([^,]+),\s*([^)]+)\)\s*scale\(([^)]+)\)/);
+           if (match) {
+             const [_, x, y, k] = match;
+             const t = d3.zoomIdentity.translate(parseFloat(x), parseFloat(y)).scale(parseFloat(k));
+             svg.call(zoomSetup.transform, t);
+           }
+        }
+      });
+      
+    } catch (e) {
+      console.error("Topola render error:", e);
+    }
+  }, [members, onSelect]);
 
   return (
-    <div style={{ position:'relative', width:'100%', height:'100%', background:'linear-gradient(135deg,#f8faff,#eef2ff)', borderRadius:16, overflow:'hidden', cursor: dragging.current?'grabbing':'grab' }}
-      onMouseDown={onMD} onMouseMove={onMM} onMouseUp={onMU} onMouseLeave={onMU}>
-      <div style={{ position:'absolute', top:12, right:12, zIndex:10, display:'flex', gap:6 }}>
-        {[['+',0.15],['-',-0.15],['↺',0]].map(([lbl,d])=>(
-          <button key={lbl} onClick={()=>d===0?(setPan({x:0,y:0}),setZoom(1)):setZoom(z=>Math.min(2.5,Math.max(0.25,z+d)))}
-            style={{ width:32,height:32,borderRadius:8,border:'none',background:'#fff',boxShadow:'0 2px 8px #0002',cursor:'pointer',fontWeight:700,fontSize:16 }}>{lbl}</button>
-        ))}
-      </div>
-      <svg width="100%" height="100%" onWheel={onWheel} style={{ userSelect:'none' }}>
-        <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
-          {edges.map((e,i)=>
-            e.type==='spouse'
-              ? <line key={i} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} stroke="#f472b6" strokeWidth={2.5} strokeDasharray="6,4" />
-              : <path key={i} d={`M${e.x1},${e.y1} C${e.x1},${(e.y1+e.y2)/2} ${e.x2},${(e.y1+e.y2)/2} ${e.x2},${e.y2}`}
-                  fill="none" stroke="#94a3b8" strokeWidth={2} />
-          )}
-          {members.map(m=>{
-            const p=pos[m.id]; if(!p) return null;
-            const px=CX+p.x, py=CY+p.y, sel=selected?.id===m.id;
-            const bg = sel ? (m.gender==='male'?'#3b82f6':'#ec4899') : (m.gender==='male'?'#eff6ff':'#fdf2f8');
-            const stroke = m.gender==='male'?'#3b82f6':'#ec4899';
-            return (
-              <g key={m.id} onClick={()=>onSelect(m)} style={{cursor:'pointer'}}>
-                <rect x={px} y={py} width={NODE_W} height={NODE_H} rx={13}
-                  fill={bg} stroke={stroke} strokeWidth={sel?3:1.5}
-                  filter={sel?'drop-shadow(0 4px 14px rgba(99,102,241,.4))':'drop-shadow(0 2px 6px rgba(0,0,0,.08))'} />
-                <text x={px+NODE_W/2} y={py+27} textAnchor="middle" fontSize={22}>{m.photo}</text>
-                <text x={px+NODE_W/2} y={py+50} textAnchor="middle" fontSize={10} fontWeight="700" fill={sel?'#fff':'#1e293b'}>
-                  {m.name.length>15?m.name.slice(0,14)+'…':m.name}
-                </text>
-                <text x={px+NODE_W/2} y={py+65} textAnchor="middle" fontSize={9} fill={sel?'#e2e8f0':'#64748b'}>
-                  {m.born_year||'?'}{m.died_year?`–${m.died_year}`:''}
-                </text>
-                {m.died_year && <text x={px+NODE_W-9} y={py+14} fontSize={11} textAnchor="middle">✝</text>}
-              </g>
-            );
-          })}
-        </g>
-      </svg>
+    <div style={{ position:'relative', width:'100%', height:'100%', background:'linear-gradient(135deg,#f8faff,#eef2ff)', borderRadius:16, overflow:'hidden' }}>
+      <div ref={containerRef} style={{ width:'100%', height:'100%' }} />
       <div style={{ position:'absolute', bottom:12, left:12, background:'#ffffffcc', borderRadius:10, padding:'6px 12px', fontSize:11, color:'#64748b', backdropFilter:'blur(6px)' }}>
-        🖱 Drag geser · Scroll zoom · Klik node detail
+        🖱 Topola Family Tree · Drag geser · Scroll zoom · Klik node detail
       </div>
     </div>
   );

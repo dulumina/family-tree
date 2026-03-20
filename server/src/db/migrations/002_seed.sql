@@ -57,9 +57,9 @@ INSERT OR IGNORE INTO members (id,name,gender,born_year,photo,generation,notes) 
 (13,'Dito K','male','2020','👶',3,'Anak Bagas');
 
 INSERT OR IGNORE INTO member_parents VALUES
-(11,7),(11,8),
-(12,7),(12,8),
-(13,9),(13,10);
+(11,7),
+(12,7),
+(13,9);
 
 -- ============================================================
 -- GENERASI 5 (4)
@@ -69,8 +69,8 @@ INSERT OR IGNORE INTO members (id,name,gender,born_year,photo,generation,notes) 
 (15,'Fikri Santoso','male','2040','👶',4,'Anak Rafi');
 
 INSERT OR IGNORE INTO member_parents VALUES
-(14,11),(14,12),
-(15,11),(15,12);
+(14,11),
+(15,11);
 
 -- ============================================================
 -- GENERASI 6 (5)
@@ -79,7 +79,7 @@ INSERT OR IGNORE INTO members (id,name,gender,born_year,photo,generation,notes) 
 (16,'Nara Santoso','female','2065','👶',5,'Anak Alya');
 
 INSERT OR IGNORE INTO member_parents VALUES
-(16,14),(16,15);
+(16,14);
 
 -- ============================================================
 -- GENERASI 7 (6)
