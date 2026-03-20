@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd client && npm install && npm run build && cd .. && mkdir -p public && cp -r client/dist/* public/ && node server/src/db/migrate.js ",
+    "build": "cd client && npm install && npm run build && cd .. && node server/src/db/migrate.js",
+    "migrate": "node server/src/db/migrate.js",
     "start": "node server/src/index.js"
   },
   "dependencies": {
