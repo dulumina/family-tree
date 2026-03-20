@@ -2,6 +2,8 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
+const migrate = require('./db/migrate');
+migrate();
 
 const app = express();
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
