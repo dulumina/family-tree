@@ -101,30 +101,31 @@ export default function TreeView({ members, selected, onSelect }) {
         animate: true
       });
       
-      chart.render({ startIndi }).then(() => {
-        // Init D3 Drag and Zoom after topola renders
-        const svg = d3.select(containerRef.current).select('svg');
-        const g = svg.select('g');
-        
-        const zoomSetup = d3.zoom()
-          .scaleExtent([0.1, 4])
-          .on('zoom', (event) => {
-            g.attr('transform', event.transform);
-          });
+      // Render topola synchronously
+      chart.render({ startIndi });
 
-        svg.call(zoomSetup);
-        
-        // Grab Topola's initial transform to prevent jumping
-        let currentTransformStr = g.attr('transform');
-        if (currentTransformStr) {
-           const match = currentTransformStr.match(/translate\(([^,]+),\s*([^)]+)\)\s*scale\(([^)]+)\)/);
-           if (match) {
-             const [_, x, y, k] = match;
-             const t = d3.zoomIdentity.translate(parseFloat(x), parseFloat(y)).scale(parseFloat(k));
-             svg.call(zoomSetup.transform, t);
-           }
-        }
-      });
+      // Init D3 Drag and Zoom immediately after rendering
+      const svg = d3.select(containerRef.current).select('svg');
+      const g = svg.select('g');
+      
+      const zoomSetup = d3.zoom()
+        .scaleExtent([0.1, 4])
+        .on('zoom', (event) => {
+          g.attr('transform', event.transform);
+        });
+
+      svg.call(zoomSetup);
+      
+      // Grab Topola's initial transform to prevent jumping
+      let currentTransformStr = g.attr('transform');
+      if (currentTransformStr) {
+         const match = currentTransformStr.match(/translate\(([^,]+),\s*([^)]+)\)\s*scale\(([^)]+)\)/);
+         if (match) {
+           const [_, x, y, k] = match;
+           const t = d3.zoomIdentity.translate(parseFloat(x), parseFloat(y)).scale(parseFloat(k));
+           svg.call(zoomSetup.transform, t);
+         }
+      }
       
     } catch (e) {
       console.error("Topola render error:", e);
