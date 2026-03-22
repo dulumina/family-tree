@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: family-tree-app
+    ports:
+      - "3001:3001"
+    volumes:
+      # Mount the sqlite data directory to persist the database
+      - ./server/data:/app/server/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    restart: unless-stopped
