@@ -2,10 +2,38 @@ const router = require('express').Router();
 const db = require('../db/database');
 const auth = require('../middleware/auth');
 
+function generateAvatar(m) {
+  const gender = m.gender; // 'male' or 'female'
+  const isDead = !!m.died_year;
+  
+  const born = parseInt(m.born_year, 10);
+  const died = parseInt(m.died_year, 10);
+  const currentYear = new Date().getFullYear();
+  
+  let age = null;
+  if (!isNaN(born)) {
+    age = isDead && !isNaN(died) ? died - born : currentYear - born;
+  }
+
+  if (age !== null) {
+    if (age <= 12) {
+      if (age <= 3) return '👶';
+      return gender === 'male' ? '👦' : '👧';
+    } else if (age >= 55) {
+      return gender === 'male' ? '👴' : '👵';
+    } else {
+      return gender === 'male' ? '👨' : '👩';
+    }
+  }
+
+  return gender === 'male' ? '👨' : '👩';
+}
+
 // helper: fetch full member with parents
 function getMemberFull(id) {
   const m = db.prepare('SELECT * FROM members WHERE id = ?').get(id);
   if (!m) return null;
+  m.photo = generateAvatar(m);
   m.parentIds = db.prepare('SELECT parent_id FROM member_parents WHERE member_id = ?')
     .all(id).map(r => r.parent_id);
   return m;
@@ -28,6 +56,7 @@ router.get('/', auth(), (req, res) => {
   const parents = db.prepare('SELECT * FROM member_parents').all();
   const result = rows.map(m => ({
     ...m,
+    photo: generateAvatar(m),
     parentIds: parents.filter(p => p.member_id === m.id).map(p => p.parent_id)
   }));
   res.json(result);

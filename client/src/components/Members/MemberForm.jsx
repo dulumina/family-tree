@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { membersApi } from '../../api';
 
-const PHOTOS = ['👴','👵','👨','👩','🧑','👧','👦','🧓','👶','🧔'];
-
 export function SearchSelect({ label, placeholder, initialIds, single, members, onSelect, excludeId }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -82,12 +80,6 @@ export default function MemberForm({ members, initial, onSave, onClose }) {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
-      <div style={{ display:'flex', gap:6, marginBottom:16, flexWrap:'wrap' }}>
-        {PHOTOS.map(p => (
-          <button key={p} onClick={()=>s('photo',p)}
-            style={{ fontSize:22, padding:6, borderRadius:8, border: f.photo===p?'2px solid #6366f1':'2px solid #e2e8f0', background: f.photo===p?'#eef2ff':'transparent', cursor:'pointer' }}>{p}</button>
-        ))}
-      </div>
       {[['Nama Lengkap *','name','text'],['Tahun Lahir','born_year','text'],['Tahun Wafat','died_year','text']].map(([lbl,key,type])=>(
         <div key={key} style={{ marginBottom:12 }}>
           <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>{lbl}</label>
