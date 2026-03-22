@@ -78,28 +78,34 @@ export default function TreeView({ members, selected, onSelect }) {
 
     members.forEach(m => {
       if (m.spouse_id) {
-        const id = getFamId([m.id, m.spouse_id]);
-        if (!famsMap.has(id)) {
-          const spouse = members.find(s => s.id === m.spouse_id);
-          const { husb, wife } = assignRoles(m, spouse);
-          famsMap.set(id, { id, husb: husb ? String(husb) : undefined, wife: wife ? String(wife) : undefined, children: [] });
+        const spouse = members.find(s => s.id === m.spouse_id);
+        if (spouse) {
+          const id = getFamId([m.id, m.spouse_id]);
+          if (!famsMap.has(id)) {
+            const { husb, wife } = assignRoles(m, spouse);
+            famsMap.set(id, { id, husb: husb ? String(husb) : undefined, wife: wife ? String(wife) : undefined, children: [] });
+          }
         }
       }
       if (m.parentIds && m.parentIds.length > 0) {
-        const id = getFamId(m.parentIds);
-        if (!famsMap.has(id)) {
-          const p1 = members.find(p => p.id === m.parentIds[0]);
-          const p2 = m.parentIds[1] ? members.find(p => p.id === m.parentIds[1]) : null;
-          const { husb, wife } = assignRoles(p1, p2);
-          famsMap.set(id, { id, husb: husb ? String(husb) : undefined, wife: wife ? String(wife) : undefined, children: [] });
+        const validParentIds = m.parentIds.filter(pid => members.some(p => p.id === pid));
+        if (validParentIds.length > 0) {
+          const id = getFamId(validParentIds);
+          if (!famsMap.has(id)) {
+            const p1 = members.find(p => p.id === validParentIds[0]);
+            const p2 = validParentIds[1] ? members.find(p => p.id === validParentIds[1]) : null;
+            const { husb, wife } = assignRoles(p1, p2);
+            famsMap.set(id, { id, husb: husb ? String(husb) : undefined, wife: wife ? String(wife) : undefined, children: [] });
+          }
+          famsMap.get(id).children.push(String(m.id));
         }
-        famsMap.get(id).children.push(String(m.id));
       }
     });
 
     members.forEach(m => {
       let famc = undefined;
-      if (m.parentIds && m.parentIds.length > 0) famc = getFamId(m.parentIds);
+      const validParentIds = m.parentIds ? m.parentIds.filter(pid => members.some(p => p.id === pid)) : [];
+      if (validParentIds.length > 0) famc = getFamId(validParentIds);
       const famsForIndi = [];
       famsMap.forEach(fam => {
         if (fam.husb === String(m.id) || fam.wife === String(m.id)) famsForIndi.push(fam.id);
@@ -117,7 +123,7 @@ export default function TreeView({ members, selected, onSelect }) {
     });
 
     const json = { indis, fams: Array.from(famsMap.values()) };
-    const startIndi = String(members.length > 0 ? members[0].id : 1);
+    const startIndi = selected ? String(selected.id) : String(members.length > 0 ? members[0].id : 1);
 
     // Kustomisasi ukuran node di layout engine Topola untuk jarak yang tepat
     class CustomRenderer extends topola.DetailedRenderer {
@@ -145,6 +151,8 @@ export default function TreeView({ members, selected, onSelect }) {
       chart.render({ startIndi });
 
       const svg = d3.select(containerRef.current).select('svg');
+      // Reset ukuran agar Topola tidak mengecilkan batas SVG 
+      svg.attr('width', '100%').attr('height', '100%');
       
       svg.selectAll('g.indi').each(function() {
         const indiG = d3.select(this);

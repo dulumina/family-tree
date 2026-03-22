@@ -19,6 +19,7 @@ export default function AppPage() {
   const [selected, setSelected] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
+  const [focusMemberId, setFocusMemberId] = useState(null);
   const { isAdmin, isEditor } = useAuth();
   const { toast } = useToast();
 
@@ -54,10 +55,25 @@ export default function AppPage() {
   const maxGen = Math.max(...members.map(m=>m.generation), 0);
   const allGens = Array.from({length:maxGen+1},(_,i)=>i);
 
-  const filtered = members.filter(m =>
-    visGens.includes(m.generation) &&
-    (!search || m.name.toLowerCase().includes(search.toLowerCase()))
-  );
+  let filtered = members;
+  if (focusMemberId) {
+    const _focus = members.find(m => m.id === focusMemberId);
+    if (_focus) {
+      const parentIds = _focus.parentIds || [];
+      const spouseId = _focus.spouse_id;
+      const childrenIds = members.filter(m => m.parentIds?.includes(focusMemberId) || (spouseId && m.parentIds?.includes(spouseId))).map(m => m.id);
+      const allowedIds = new Set([focusMemberId, ...parentIds, ...childrenIds]);
+      if (spouseId) allowedIds.add(spouseId);
+      filtered = members.filter(m => allowedIds.has(m.id));
+    } else {
+      setFocusMemberId(null);
+    }
+  } else {
+    filtered = members.filter(m =>
+      visGens.includes(m.generation) &&
+      (!search || m.name.toLowerCase().includes(search.toLowerCase()))
+    );
+  }
 
   const handleSave = async f => {
     try {
@@ -143,8 +159,16 @@ export default function AppPage() {
                   </div>
                 ))}
                 {selected.notes && <div style={{ marginTop:10, padding:10, background:'#f8fafc', borderRadius:8, fontSize:12, color:'#64748b', fontStyle:'italic' }}>{selected.notes}</div>}
+                
+                <div style={{ marginTop: 14 }}>
+                  <button onClick={() => setFocusMemberId(focusMemberId === selected.id ? null : selected.id)}
+                    style={{ width:'100%', padding:'8px', borderRadius:9, border:'1.5px solid #6366f1', background: focusMemberId === selected.id ? '#6366f1' : 'transparent', color: focusMemberId === selected.id ? '#fff' : '#6366f1', fontWeight:600, cursor:'pointer' }}>
+                    {focusMemberId === selected.id ? 'Tampilkan Semua Keluarga' : 'Tampilkan Keluarga Kecil'}
+                  </button>
+                </div>
+
                 {(isAdmin||isEditor) && (
-                  <div style={{ display:'flex', gap:8, marginTop:14 }}>
+                  <div style={{ display:'flex', gap:8, marginTop:8 }}>
                     <button onClick={()=>{setEditTarget(selected);setShowForm(true);}}
                       style={{ flex:1, padding:'8px', borderRadius:9, border:'none', background:'#6366f1', color:'#fff', fontWeight:600, cursor:'pointer' }}>Edit</button>
                     {isAdmin && <button onClick={()=>handleDelete(selected.id)}
