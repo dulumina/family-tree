@@ -13,6 +13,7 @@ app.use(express.json());
 app.use('/api/auth',    require('./routes/auth'));
 app.use('/api/members', require('./routes/members'));
 app.use('/api/users',   require('./routes/users'));
+app.use('/api/data',    require('./routes/data'));
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 

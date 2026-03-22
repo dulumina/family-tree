@@ -40,6 +40,7 @@ export default function UserManage({ members }) {
     load();
   };
 
+
   return (
     <div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
@@ -110,6 +111,7 @@ export default function UserManage({ members }) {
           </div>
         ))}
       </div>
+
     </div>
   );
 }

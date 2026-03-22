@@ -7,6 +7,7 @@ import TreeView from '../components/Tree/TreeView';
 import MemberList from '../components/Members/MemberList';
 import MemberForm from '../components/Members/MemberForm';
 import UserManage from '../components/Admin/UserManage';
+import DataManage from '../components/Admin/DataManage';
 import { useToast } from '../components/UI/Toast';
 
 const genLabel = g => `Generasi ${g+1}`;
@@ -185,6 +186,7 @@ export default function AppPage() {
         )}
 
         {tab==='admin' && isAdmin && <UserManage members={members} />}
+        {tab==='data' && isAdmin && <DataManage members={members} />}
       </div>
 
       {showForm && (

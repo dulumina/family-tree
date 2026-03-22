@@ -39,5 +39,11 @@ export const usersApi = {
   update:    (id,d) => api.patch(`/users/${id}/role`, d),
   remove:    id => api.delete(`/users/${id}`),
 };
+export const dataApi = {
+  exportJson:   () => api.get('/data/export/json'),
+  exportGedcom: () => api.get('/data/export/gedcom', { responseType: 'blob' }),
+  importJson:   d => api.post('/data/import/json', d),
+  importGedcom: content => api.post('/data/import/gedcom', { content }),
+};
 
 export default api;

@@ -6,6 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: family-tree-app
+    image: fikridulumina/family-tree-app:latest
     ports:
       - "3001:3001"
     volumes:

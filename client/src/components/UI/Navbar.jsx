@@ -3,7 +3,11 @@ import { useState } from 'react';
 
 export default function Navbar({ tab, setTab }) {
   const { user, logout, isAdmin } = useAuth();
-  const tabs = [['tree', '🌲', 'Pohon'], ['list', '📋', 'Daftar'], ...(isAdmin ? [['admin', '⚙️', 'Admin']] : [])];
+  const tabs = [
+    ['tree', '🌲', 'Pohon'], 
+    ['list', '📋', 'Daftar'], 
+    ...(isAdmin ? [['admin', '⚙️', 'Admin'], ['data', '💾', 'Manajemen Data']] : [])
+  ];
   return (
     <header style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', boxShadow: '0 2px 16px #0003' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 58 }}>
