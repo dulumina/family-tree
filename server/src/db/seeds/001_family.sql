@@ -1,14 +1,6 @@
 -- ============================================================
--- MIGRATION 002 — Seed Data (50 Anggota, 7 Generasi)
+-- SEED FAMILY DATA (50 Members, 7 Generations)
 -- ============================================================
-
--- ============================================================
--- ADMIN
--- ============================================================
-INSERT OR IGNORE INTO users (name, email, password, role) VALUES
-('Administrator','admin@keluarga.id',
- '$2b$10$QIMB83wrlVCQkERD8OvzYusuCaN5ZiDPkiA.wCzB7/D6AQYTw/G7a',
- 'admin');
 
 -- ============================================================
 -- GENERASI 1 (0) : 2 orang

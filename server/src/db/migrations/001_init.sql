@@ -45,3 +45,13 @@ CREATE TABLE IF NOT EXISTS migrations (
   filename   TEXT    NOT NULL UNIQUE,
   applied_at TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
+
+
+-- ============================================================
+-- SEED ADMIN USER
+-- ============================================================
+INSERT OR IGNORE INTO users (name, email, password, role) VALUES
+('Administrator','admin@keluarga.id',
+ '$2b$10$QIMB83wrlVCQkERD8OvzYusuCaN5ZiDPkiA.wCzB7/D6AQYTw/G7a',
+ 'admin');
