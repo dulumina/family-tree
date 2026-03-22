@@ -24,8 +24,6 @@ export default function AppPage() {
 
   const load = useCallback(async () => {
     const { data } = await membersApi.getAll();
-    
-    // Auto-calculate generations based on ancestry
     const computed = (function calc(mems) {
       const map = {};
       mems.forEach(m => map[m.id] = { ...m, _gen: -1 });
@@ -37,7 +35,6 @@ export default function AppPage() {
         return m._gen;
       };
       mems.forEach(m => getG(m.id));
-      // align spouses
       for(let i=0; i<3; i++) mems.forEach(m => {
         if(m.spouse_id && map[m.spouse_id]) {
           const s = map[m.spouse_id];
@@ -47,7 +44,6 @@ export default function AppPage() {
       });
       return mems.map(m => ({ ...m, generation: map[m.id]._gen }));
     })(data);
-
     setMembers(computed);
     const allGens = [...new Set(computed.map(m=>m.generation))];
     setVisGens(allGens);
@@ -80,7 +76,7 @@ export default function AppPage() {
   const toggleGen = g => setVisGens(gs => gs.includes(g)?gs.filter(x=>x!==g):[...gs,g]);
 
   return (
-    <div style={{ minHeight:'100vh', background:'#f8fafc', display:'flex', flexDirection:'column' }}>
+    <div style={{ minHeight:'100vh', background:'#f0f4ff', display:'flex', flexDirection:'column' }}>
       <Navbar tab={tab} setTab={setTab} />
 
       {/* Toolbar */}

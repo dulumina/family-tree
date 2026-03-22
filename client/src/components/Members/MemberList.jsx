@@ -11,7 +11,7 @@ export default function MemberList({ members, onEdit, onDelete }) {
     const spouse = members.find(s => s.id === m.spouse_id);
     if (!spouse) return true;
     if (spouse.parentIds.length > 0) return false;
-    return m.id <= spouse.id; // Root tie-break
+    return m.id <= spouse.id;
   };
 
   const filteredMembers = useMemo(() => {
@@ -25,7 +25,7 @@ export default function MemberList({ members, onEdit, onDelete }) {
   const gens = [...new Set(filteredMembers.map(m=>m.generation))].sort((a,b)=>a-b);
   const genLabel = g => `Generasi ${g+1}`;
 
-  const toggleSpouse = id => setShowSpousesOf(prev => 
+  const toggleSpouse = id => setShowSpousesOf(prev =>
     prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
   );
 
@@ -39,10 +39,9 @@ export default function MemberList({ members, onEdit, onDelete }) {
               const blood = isBlood(m);
               const accent = m.gender==='male'?'#3b82f6':'#ec4899';
               const hasSpouse = members.some(x => x.spouse_id === m.id || m.spouse_id === x.id);
-              
               return (
-                <div key={m.id} style={{ 
-                  background: m.gender==='male'?'#eff6ff':'#fdf2f8', 
+                <div key={m.id} style={{
+                  background: m.gender==='male'?'#eff6ff':'#fdf2f8',
                   border: blood ? `1.5px solid ${accent}` : `1.5px dashed ${accent}80`,
                   borderRadius:14, padding:14, display:'flex', gap:12, alignItems:'flex-start',
                   boxShadow: blood ? '0 2px 4px #0001' : 'none',

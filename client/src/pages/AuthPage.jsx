@@ -26,7 +26,6 @@ export default function AuthPage() {
           <h1 style={{ margin:0, fontSize:22, color:'#1e293b' }}>{mode==='login'?'Masuk':'Daftar Akun'}</h1>
           <p style={{ margin:'4px 0 0', color:'#64748b', fontSize:14 }}>Pohon Silsilah Keluarga</p>
         </div>
-
         {mode==='register' && (
           <div style={{ marginBottom:14 }}>
             <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:5 }}>Nama Lengkap</label>

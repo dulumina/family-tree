@@ -35,8 +35,7 @@ export function SearchSelect({ label, placeholder, initialIds, single, members, 
   const toggle = (m) => {
     if (single) {
       onSelect(m.id === initialIds[0] ? [] : [m.id]);
-      setOpen(false);
-      setQuery('');
+      setOpen(false); setQuery('');
     } else {
       const isSelected = initialIds.includes(m.id);
       onSelect(isSelected ? initialIds.filter(id => id !== m.id) : [...initialIds, m.id]);
@@ -83,14 +82,12 @@ export default function MemberForm({ members, initial, onSave, onClose }) {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
-      {/* Photo picker */}
       <div style={{ display:'flex', gap:6, marginBottom:16, flexWrap:'wrap' }}>
         {PHOTOS.map(p => (
           <button key={p} onClick={()=>s('photo',p)}
             style={{ fontSize:22, padding:6, borderRadius:8, border: f.photo===p?'2px solid #6366f1':'2px solid #e2e8f0', background: f.photo===p?'#eef2ff':'transparent', cursor:'pointer' }}>{p}</button>
         ))}
       </div>
-
       {[['Nama Lengkap *','name','text'],['Tahun Lahir','born_year','text'],['Tahun Wafat','died_year','text']].map(([lbl,key,type])=>(
         <div key={key} style={{ marginBottom:12 }}>
           <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>{lbl}</label>
@@ -98,7 +95,6 @@ export default function MemberForm({ members, initial, onSave, onClose }) {
             style={{ width:'100%', padding:'9px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14, boxSizing:'border-box' }} />
         </div>
       ))}
-
       <div style={{ marginBottom:12 }}>
         <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Jenis Kelamin</label>
         <select value={f.gender} onChange={e=>s('gender', e.target.value)}
@@ -107,19 +103,15 @@ export default function MemberForm({ members, initial, onSave, onClose }) {
           <option value="female">Perempuan</option>
         </select>
       </div>
-
       <SearchSelect label="Orang Tua" placeholder="Cari orang tua..." initialIds={f.parentIds} members={members} excludeId={initial?.id}
         onSelect={ids => s('parentIds', ids)} />
-
       <SearchSelect label="Pasangan" placeholder="Cari pasangan..." initialIds={f.spouse_id?[f.spouse_id]:[]} single members={members} excludeId={initial?.id}
         onSelect={ids => s('spouse_id', ids[0]||null)} />
-
       <div style={{ marginBottom:20 }}>
         <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Catatan</label>
         <textarea value={f.notes||''} onChange={e=>s('notes',e.target.value)} rows={2}
           style={{ width:'100%', padding:'9px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14, resize:'vertical', boxSizing:'border-box' }} />
       </div>
-
       <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
         <button onClick={onClose} style={{ padding:'9px 20px', borderRadius:10, border:'2px solid #6366f1', background:'transparent', color:'#6366f1', fontWeight:600, cursor:'pointer' }}>Batal</button>
         <button onClick={()=>f.name&&onSave(f)}

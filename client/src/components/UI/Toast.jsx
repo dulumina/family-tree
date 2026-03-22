@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
 let _push = null;
 export function useToast() {
@@ -14,9 +14,9 @@ export function ToastContainer() {
   }, []);
 
   return (
-    <div style={{ position:'fixed', bottom:24, right:24, zIndex:9999, display:'flex', flexDirection:'column', gap:8 }}>
+    <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, display: 'flex', flexDirection: 'column', gap: 8 }}>
       {items.map(({ id, msg }) => (
-        <div key={id} style={{ background:'#1e293b', color:'#fff', padding:'12px 20px', borderRadius:12, fontSize:14, fontWeight:600, boxShadow:'0 8px 24px #0003', animation:'slideIn .3s ease' }}>
+        <div key={id} style={{ background: '#1e293b', color: '#fff', padding: '12px 20px', borderRadius: 12, fontSize: 14, fontWeight: 600, boxShadow: '0 8px 24px #0003', animation: 'slideIn .3s ease' }}>
           {msg}
         </div>
       ))}
