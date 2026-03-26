@@ -218,4 +218,28 @@ router.post('/import/gedcom', auth('admin'), (req, res) => {
   }
 });
 
+// --- UTILS ---
+
+router.post('/seed', auth('admin'), (req, res) => {
+  try {
+    const runSeeds = require('../db/seed');
+    runSeeds();
+    res.json({ success: true, message: 'Data demo berhasil dimuat' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/clear', auth('admin'), (req, res) => {
+  try {
+    db.exec('PRAGMA foreign_keys = OFF');
+    db.prepare('DELETE FROM member_parents').run();
+    db.prepare('DELETE FROM members').run();
+    db.exec('PRAGMA foreign_keys = ON');
+    res.json({ success: true, message: 'Data silsilah berhasil dikosongkan' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

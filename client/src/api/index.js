@@ -44,6 +44,8 @@ export const dataApi = {
   exportGedcom: () => api.get('/data/export/gedcom', { responseType: 'blob' }),
   importJson:   d => api.post('/data/import/json', d),
   importGedcom: content => api.post('/data/import/gedcom', { content }),
+  clear:        () => api.delete('/data/clear'),
+  seed:         () => api.post('/data/seed'),
 };
 
 export default api;

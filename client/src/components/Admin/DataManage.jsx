@@ -218,6 +218,24 @@ export default function DataManage({ members }) {
     } catch(e) { console.error(e); toast('❌ Gagal ekspor SVG'); }
   };
 
+  const handleClear = async () => {
+    if (!confirm('⚠️ PERINGATAN! Ini akan MENGHAPUS SEMUA DATA silsilah (anggota dan hubungan). Tindakan ini tidak dapat dibatalkan. Lanjutkan?')) return;
+    try {
+      await dataApi.clear();
+      toast('🗑 Semua data silsilah berhasil dihapus');
+      setTimeout(() => window.location.reload(), 1000);
+    } catch(e) { toast('❌ Gagal menghapus data'); }
+  };
+
+  const handleSeed = async () => {
+    if (!confirm('Ini akan memuat data demo keluarga besar. Lanjutkan?')) return;
+    try {
+      await dataApi.seed();
+      toast('✅ Data demo berhasil dimuat! Memuat ulang...');
+      setTimeout(() => window.location.reload(), 1500);
+    } catch(e) { toast('❌ Gagal memuat data demo'); }
+  };
+
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
       <div style={{ marginBottom: 24 }}>
@@ -272,6 +290,22 @@ export default function DataManage({ members }) {
           </div>
         </div>
 
+      </div>
+
+      <div style={{ marginTop: 24, background:'#fff', padding:24, borderRadius:20, border:'1.5px solid #e2e8f0', boxShadow:'0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+        <div style={{ fontWeight:700, color:'#475569', marginBottom:16, display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ fontSize: 24 }}>🛠️</span>
+          <div style={{ fontSize: 16 }}>Pemeliharaan Sistem</div>
+        </div>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:12 }}>
+          <button onClick={handleSeed} style={{ padding:'12px 24px', borderRadius:12, border:'none', background:'#f59e0b', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:13 }}>
+            🧬 MUAT DATA DEMO
+          </button>
+          <button onClick={handleClear} style={{ padding:'12px 24px', borderRadius:12, border:'none', background:'#ef4444', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:13 }}>
+            🗑 KOSONGKAN SEMUA DATA
+          </button>
+        </div>
+        <p style={{ marginTop: 12, fontSize: 12, color: '#94a3b8' }}>* Tindakan ini hanya mempengaruhi data silsilah. Akun pengguna tetap aman.</p>
       </div>
       
       <div style={{ marginTop: 30, background: '#fefce8', padding: 16, borderRadius: 12, border: '1px solid #fef08a', display: 'flex', gap: 12 }}>
