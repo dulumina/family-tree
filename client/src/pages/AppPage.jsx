@@ -17,7 +17,6 @@ export default function AppPage() {
   const [tab, setTab] = useState('tree');
   const [members, setMembers] = useState([]);
   const [search, setSearch] = useState('');
-  const [visGens, setVisGens] = useState([0,1,2,3,4]);
   const [selected, setSelected] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
@@ -50,14 +49,11 @@ export default function AppPage() {
       return mems.map(m => ({ ...m, generation: map[m.id]._gen }));
     })(data);
     setMembers(computed);
-    const allGens = [...new Set(computed.map(m=>m.generation))];
-    setVisGens(allGens);
   }, []);
 
   useEffect(()=>{ load(); }, [load]);
 
-  const maxGen = Math.max(...members.map(m=>m.generation), 0);
-  const allGens = Array.from({length:maxGen+1},(_,i)=>i);
+
 
   const families = useMemo(() => {
     if (!members || members.length === 0) return [];
@@ -130,7 +126,6 @@ export default function AppPage() {
     
     filtered = members.filter(m =>
       familyIds.has(m.id) &&
-      visGens.includes(m.generation) &&
       (!search || m.name.toLowerCase().includes(search.toLowerCase()))
     );
   }
@@ -149,7 +144,7 @@ export default function AppPage() {
     toast('🗑 Anggota dihapus'); setSelected(null); load();
   };
 
-  const toggleGen = g => setVisGens(gs => gs.includes(g)?gs.filter(x=>x!==g):[...gs,g]);
+
 
   return (
     <div style={{ minHeight:'100vh', background:'#f0f4ff', display:'flex', flexDirection:'column' }}>
@@ -166,7 +161,6 @@ export default function AppPage() {
           <button onClick={() => {
               const d = document.getElementById('family-dropdown');
               d.style.display = d.style.display === 'none' ? 'block' : 'none';
-              document.getElementById('gen-dropdown').style.display = 'none';
             }}
             style={{ padding:'8px 16px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}>
             <span>👨‍👩‍👧‍👦 {families[activeFamilyIndex] ? `Keluarga ${families[activeFamilyIndex].root.name}` : 'Pilih Keluarga'}</span>
@@ -184,29 +178,7 @@ export default function AppPage() {
             </div>
           </div>
         </div>
-        <div style={{ position: 'relative' }}>
-          <button onClick={() => {
-              const d = document.getElementById('gen-dropdown');
-              d.style.display = d.style.display === 'none' ? 'block' : 'none';
-              document.getElementById('family-dropdown').style.display = 'none';
-            }}
-            style={{ padding:'8px 16px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}>
-            <span>📂 Lapisan ({visGens.length})</span>
-            <span style={{ fontSize:10 }}>▼</span>
-          </button>
-          <div id="gen-dropdown" style={{ display:'none', position:'absolute', top:'100%', right:0, background:'#fff', border:'1.5px solid #e2e8f0', borderRadius:12, marginTop:8, padding:10, boxShadow:'0 10px 25px #0002', zIndex:100, minWidth:180 }}>
-            {allGens.map(g => (
-              <label key={g} style={{ display:'flex', alignItems:'center', gap:10, padding:'6px 8px', borderRadius:8, cursor:'pointer', fontSize:14, background: visGens.includes(g)?'#f5f3ff':'transparent' }}>
-                <input type="checkbox" checked={visGens.includes(g)} onChange={() => toggleGen(g)} style={{ accentColor:'#6366f1' }} />
-                <span style={{ color: visGens.includes(g)?'#6366f1':'#475569', fontWeight: visGens.includes(g)?600:400 }}>{genLabel(g)}</span>
-              </label>
-            ))}
-            <div style={{ borderTop:'1px solid #f1f5f9', marginTop:8, paddingTop:8, display:'flex', gap:8 }}>
-              <button onClick={() => setVisGens(allGens)} style={{ flex:1, fontSize:11, padding:4, borderRadius:6, border:'1px solid #e2e8f0', background:'#f8fafc', cursor:'pointer' }}>Semua</button>
-              <button onClick={() => setVisGens([])} style={{ flex:1, fontSize:11, padding:4, borderRadius:6, border:'1px solid #e2e8f0', background:'#f8fafc', cursor:'pointer' }}>Kosong</button>
-            </div>
-          </div>
-        </div>
+
         {isEditor && (
           <button onClick={()=>{setEditTarget(null);setShowForm(true);}}
             style={{ padding:'8px 18px', borderRadius:10, border:'none', background:'linear-gradient(135deg,#10b981,#059669)', color:'#fff', fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
