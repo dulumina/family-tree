@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { membersApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/UI/Navbar';
@@ -23,6 +23,7 @@ export default function AppPage() {
   const [editTarget, setEditTarget] = useState(null);
   const [focusMemberId, setFocusMemberId] = useState(null);
   const [detailTab, setDetailTab] = useState('info'); // 'info' | 'mahrom'
+  const [activeFamilyIndex, setActiveFamilyIndex] = useState(0);
   const { isAdmin, isEditor } = useAuth();
   const { toast } = useToast();
 
@@ -58,6 +59,58 @@ export default function AppPage() {
   const maxGen = Math.max(...members.map(m=>m.generation), 0);
   const allGens = Array.from({length:maxGen+1},(_,i)=>i);
 
+  const families = useMemo(() => {
+    if (!members || members.length === 0) return [];
+    const allIds = new Set(members.map(m => m.id));
+    const roots = members.filter(m =>
+      m.gender === 'male' &&
+      (!m.parentIds || m.parentIds.length === 0 || m.parentIds.every(pid => !allIds.has(pid)))
+    );
+    if (roots.length === 0) return [{ root: { name: 'Semua' }, members }];
+    const getBloodlineIds = (rootId) => {
+      const result = new Set([rootId]);
+      const queue = [rootId];
+      while (queue.length > 0) {
+        const curr = queue.shift();
+        members.forEach(m => {
+          if (!result.has(m.id) && m.parentIds && m.parentIds.includes(curr)) {
+            result.add(m.id);
+            queue.push(m.id);
+          }
+        });
+      }
+      return result;
+    };
+    const result = roots.map(root => {
+      const bloodlineIds = getBloodlineIds(root.id);
+      const familyIds = new Set(bloodlineIds);
+      bloodlineIds.forEach(id => {
+        const m = members.find(x => x.id === id);
+        if (m?.spouse_id && allIds.has(m.spouse_id)) familyIds.add(m.spouse_id);
+      });
+      return { root, members: members.filter(m => familyIds.has(m.id)) };
+    });
+    result.sort((a, b) => b.members.length - a.members.length);
+    return result;
+  }, [members]);
+
+  // Adjust active index if it goes out of bounds
+  useEffect(() => {
+    if (activeFamilyIndex >= families.length && families.length > 0) {
+      setActiveFamilyIndex(0);
+    }
+  }, [families.length, activeFamilyIndex]);
+
+  // Auto-switch family if `selected` changes and it belongs to a different family
+  useEffect(() => {
+    if (selected && families.length > 0) {
+      const famIndex = families.findIndex(fam => fam.members.some(m => m.id === selected.id));
+      if (famIndex !== -1 && famIndex !== activeFamilyIndex) {
+        setActiveFamilyIndex(famIndex);
+      }
+    }
+  }, [selected, families, activeFamilyIndex]);
+
   let filtered = members;
   if (focusMemberId) {
     const _focus = members.find(m => m.id === focusMemberId);
@@ -72,7 +125,11 @@ export default function AppPage() {
       setFocusMemberId(null);
     }
   } else {
+    const familyMembers = families[activeFamilyIndex]?.members || [];
+    const familyIds = new Set(familyMembers.map(m => m.id));
+    
     filtered = members.filter(m =>
+      familyIds.has(m.id) &&
       visGens.includes(m.generation) &&
       (!search || m.name.toLowerCase().includes(search.toLowerCase()))
     );
@@ -106,7 +163,33 @@ export default function AppPage() {
             style={{ width:'100%', padding:'8px 12px 8px 34px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14, outline:'none', boxSizing:'border-box' }} />
         </div>
         <div style={{ position: 'relative' }}>
-          <button onClick={() => document.getElementById('gen-dropdown').style.display = document.getElementById('gen-dropdown').style.display === 'none' ? 'block' : 'none'}
+          <button onClick={() => {
+              const d = document.getElementById('family-dropdown');
+              d.style.display = d.style.display === 'none' ? 'block' : 'none';
+              document.getElementById('gen-dropdown').style.display = 'none';
+            }}
+            style={{ padding:'8px 16px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}>
+            <span>👨‍👩‍👧‍👦 {families[activeFamilyIndex] ? `Keluarga ${families[activeFamilyIndex].root.name}` : 'Pilih Keluarga'}</span>
+            <span style={{ fontSize:10 }}>▼</span>
+          </button>
+          <div id="family-dropdown" style={{ display:'none', position:'absolute', top:'100%', left:0, background:'#fff', border:'1.5px solid #e2e8f0', borderRadius:12, marginTop:8, padding:10, boxShadow:'0 10px 25px #0002', zIndex:101, minWidth:200 }}>
+            <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+              {families.map((fam, idx) => (
+                <div key={idx} onClick={() => { setActiveFamilyIndex(idx); document.getElementById('family-dropdown').style.display = 'none'; }}
+                  style={{ padding:'8px 12px', borderRadius:8, cursor:'pointer', fontSize:13, background: activeFamilyIndex === idx ? '#f5f3ff' : 'transparent', color: activeFamilyIndex === idx ? '#6366f1' : '#475569', fontWeight: activeFamilyIndex === idx ? 600 : 400, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Keluarga {fam.root.name}</span>
+                  <span style={{ fontSize:11, opacity:0.7 }}>({fam.members.length})</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => {
+              const d = document.getElementById('gen-dropdown');
+              d.style.display = d.style.display === 'none' ? 'block' : 'none';
+              document.getElementById('family-dropdown').style.display = 'none';
+            }}
             style={{ padding:'8px 16px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}>
             <span>📂 Lapisan ({visGens.length})</span>
             <span style={{ fontSize:10 }}>▼</span>
