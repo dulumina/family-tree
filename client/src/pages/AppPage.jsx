@@ -8,6 +8,7 @@ import MemberList from '../components/Members/MemberList';
 import MemberForm from '../components/Members/MemberForm';
 import UserManage from '../components/Admin/UserManage';
 import DataManage from '../components/Admin/DataManage';
+import MahromPanel from '../components/Members/MahromPanel';
 import { useToast } from '../components/UI/Toast';
 
 const genLabel = g => `Generasi ${g+1}`;
@@ -21,6 +22,7 @@ export default function AppPage() {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [focusMemberId, setFocusMemberId] = useState(null);
+  const [detailTab, setDetailTab] = useState('info'); // 'info' | 'mahrom'
   const { isAdmin, isEditor } = useAuth();
   const { toast } = useToast();
 
@@ -138,44 +140,72 @@ export default function AppPage() {
               <TreeView members={filtered} selected={selected} onSelect={setSelected} />
             </div>
             {selected && (
-              <div style={{ width:260, background:'#fff', borderRadius:16, padding:20, boxShadow:'0 4px 20px #0001', border:'1px solid #e2e8f0', overflowY:'auto' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:14 }}>
-                  <span style={{ fontWeight:700, color:'#1e293b' }}>Detail</span>
-                  <button onClick={()=>setSelected(null)} style={{ border:'none', background:'#f1f5f9', borderRadius:6, width:24, height:24, cursor:'pointer' }}>×</button>
-                </div>
-                <div style={{ textAlign:'center', marginBottom:14 }}>
-                  <div style={{ fontSize:52 }}>{selected.photo}</div>
-                  <div style={{ fontWeight:700, fontSize:16 }}>{selected.name}</div>
-                  <div style={{ fontSize:12, color:'#64748b' }}>{genLabel(selected.generation)}</div>
-                </div>
-                {[['⚧️ Gender', selected.gender==='male'?'Laki-laki':'Perempuan'],
-                  ['🎂 Lahir', selected.born_year||'-'],
-                  ['✝️ Wafat', selected.died_year||'Masih hidup'],
-                  ['🔗 Orang Tua', (selected.parentIds||[]).map(pid=>members.find(m=>m.id===pid)?.name).filter(Boolean).join(', ')||'-'],
-                  ['💑 Pasangan', members.find(m=>m.id===selected.spouse_id)?.name||'-']
-                ].map(([lbl,val])=>(
-                  <div key={lbl} style={{ display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:8 }}>
-                    <span style={{ color:'#64748b' }}>{lbl}</span>
-                    <span style={{ color:'#1e293b', fontWeight:500, textAlign:'right', maxWidth:140 }}>{val}</span>
+              <div style={{ width:280, background:'#fff', borderRadius:16, boxShadow:'0 4px 20px #0001', border:'1px solid #e2e8f0', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+                {/* Header */}
+                <div style={{ padding:'14px 16px 0', flexShrink:0 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                    <span style={{ fontWeight:700, color:'#1e293b', fontSize:14 }}>{selected.name}</span>
+                    <button onClick={()=>{ setSelected(null); setDetailTab('info'); }} style={{ border:'none', background:'#f1f5f9', borderRadius:6, width:24, height:24, cursor:'pointer', fontSize:14 }}>×</button>
                   </div>
-                ))}
-                {selected.notes && <div style={{ marginTop:10, padding:10, background:'#f8fafc', borderRadius:8, fontSize:12, color:'#64748b', fontStyle:'italic' }}>{selected.notes}</div>}
-                
-                <div style={{ marginTop: 14 }}>
-                  <button onClick={() => setFocusMemberId(focusMemberId === selected.id ? null : selected.id)}
-                    style={{ width:'100%', padding:'8px', borderRadius:9, border:'1.5px solid #6366f1', background: focusMemberId === selected.id ? '#6366f1' : 'transparent', color: focusMemberId === selected.id ? '#fff' : '#6366f1', fontWeight:600, cursor:'pointer' }}>
-                    {focusMemberId === selected.id ? 'Tampilkan Semua Keluarga' : 'Tampilkan Keluarga Kecil'}
-                  </button>
+                  {/* Tab switcher */}
+                  <div style={{ display:'flex', gap:4, background:'#f1f5f9', borderRadius:10, padding:3, marginBottom:12 }}>
+                    {[['info','📋 Detail'],['mahrom','☪️ Mahrom']].map(([key, label]) => (
+                      <button key={key} onClick={() => setDetailTab(key)}
+                        style={{ flex:1, padding:'6px 4px', borderRadius:8, border:'none', fontSize:12, fontWeight:600,
+                          background: detailTab === key ? '#fff' : 'transparent',
+                          color: detailTab === key ? '#4f46e5' : '#64748b',
+                          cursor:'pointer', boxShadow: detailTab === key ? '0 1px 4px #0002' : 'none',
+                          transition:'all 0.15s' }}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                {(isAdmin||isEditor) && (
-                  <div style={{ display:'flex', gap:8, marginTop:8 }}>
-                    <button onClick={()=>{setEditTarget(selected);setShowForm(true);}}
-                      style={{ flex:1, padding:'8px', borderRadius:9, border:'none', background:'#6366f1', color:'#fff', fontWeight:600, cursor:'pointer' }}>Edit</button>
-                    {isAdmin && <button onClick={()=>handleDelete(selected.id)}
-                      style={{ flex:1, padding:'8px', borderRadius:9, border:'none', background:'#ef4444', color:'#fff', fontWeight:600, cursor:'pointer' }}>Hapus</button>}
-                  </div>
-                )}
+                {/* Scrollable content */}
+                <div style={{ overflowY:'auto', flex:1, padding:'0 16px 16px' }}>
+                  {detailTab === 'info' && (
+                    <>
+                      <div style={{ textAlign:'center', marginBottom:14 }}>
+                        <div style={{ fontSize:52 }}>{selected.photo}</div>
+                        <div style={{ fontWeight:700, fontSize:16 }}>{selected.name}</div>
+                        <div style={{ fontSize:12, color:'#64748b' }}>{genLabel(selected.generation)}</div>
+                      </div>
+                      {[['⚧️ Gender', selected.gender==='male'?'Laki-laki':'Perempuan'],
+                        ['🎂 Lahir', selected.born_year||'-'],
+                        ['✝️ Wafat', selected.died_year||'Masih hidup'],
+                        ['🔗 Orang Tua', (selected.parentIds||[]).map(pid=>members.find(m=>m.id===pid)?.name).filter(Boolean).join(', ')||'-'],
+                        ['💑 Pasangan', members.find(m=>m.id===selected.spouse_id)?.name||'-']
+                      ].map(([lbl,val])=>(
+                        <div key={lbl} style={{ display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:8 }}>
+                          <span style={{ color:'#64748b' }}>{lbl}</span>
+                          <span style={{ color:'#1e293b', fontWeight:500, textAlign:'right', maxWidth:150 }}>{val}</span>
+                        </div>
+                      ))}
+                      {selected.notes && <div style={{ marginTop:10, padding:10, background:'#f8fafc', borderRadius:8, fontSize:12, color:'#64748b', fontStyle:'italic' }}>{selected.notes}</div>}
+                      
+                      <div style={{ marginTop: 14 }}>
+                        <button onClick={() => setFocusMemberId(focusMemberId === selected.id ? null : selected.id)}
+                          style={{ width:'100%', padding:'8px', borderRadius:9, border:'1.5px solid #6366f1', background: focusMemberId === selected.id ? '#6366f1' : 'transparent', color: focusMemberId === selected.id ? '#fff' : '#6366f1', fontWeight:600, cursor:'pointer' }}>
+                          {focusMemberId === selected.id ? 'Tampilkan Semua Keluarga' : 'Tampilkan Keluarga Kecil'}
+                        </button>
+                      </div>
+
+                      {(isAdmin||isEditor) && (
+                        <div style={{ display:'flex', gap:8, marginTop:8 }}>
+                          <button onClick={()=>{setEditTarget(selected);setShowForm(true);}}
+                            style={{ flex:1, padding:'8px', borderRadius:9, border:'none', background:'#6366f1', color:'#fff', fontWeight:600, cursor:'pointer' }}>Edit</button>
+                          {isAdmin && <button onClick={()=>handleDelete(selected.id)}
+                            style={{ flex:1, padding:'8px', borderRadius:9, border:'none', background:'#ef4444', color:'#fff', fontWeight:600, cursor:'pointer' }}>Hapus</button>}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {detailTab === 'mahrom' && (
+                    <MahromPanel person={selected} allMembers={members} />
+                  )}
+                </div>
               </div>
             )}
           </div>
