@@ -1,7 +1,9 @@
+import { useState, useMemo } from 'react';
 import { dataApi } from '../../api';
 import { useToast } from '../UI/Toast';
 import * as topola from 'topola';
 import * as d3 from 'd3';
+import { getFamilies } from '../../utils/familyUtils';
 
 const TREE_CSS = `
   .detailed text {
@@ -24,22 +26,98 @@ const TREE_CSS = `
 
 export default function DataManage({ members }) {
   const { toast } = useToast();
+  const [selectedFamilyIndex, setSelectedFamilyIndex] = useState(-1); // -1 means All Families
+
+  const families = useMemo(() => getFamilies(members), [members]);
+
+  const getExportData = () => {
+    let exportMembers = members;
+    if (selectedFamilyIndex !== -1 && families[selectedFamilyIndex]) {
+      exportMembers = families[selectedFamilyIndex].members;
+    }
+
+    const memberIds = new Set(exportMembers.map(m => m.id));
+    const exportParents = [];
+    exportMembers.forEach(m => {
+      if (m.parentIds) {
+        m.parentIds.forEach(pid => {
+          if (memberIds.has(pid)) {
+            exportParents.push({ member_id: m.id, parent_id: pid });
+          }
+        });
+      }
+    });
+
+    return { members: exportMembers, parents: exportParents };
+  };
 
   const handleExportJson = async () => {
     try {
-      const { data } = await dataApi.exportJson();
+      const data = getExportData();
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'family-tree.json'; a.click();
+      const a = document.createElement('a'); 
+      a.href = url; 
+      a.download = selectedFamilyIndex === -1 ? 'family-tree.json' : `family-${families[selectedFamilyIndex].root.name.toLowerCase().replace(/\s+/g, '-')}.json`;
+      a.click();
       toast('✅ Data JSON diekspor');
     } catch(e) { toast('❌ Gagal ekspor JSON'); }
   };
 
   const handleExportGedcom = async () => {
     try {
-      const { data } = await dataApi.exportGedcom();
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a'); a.href = url; a.download = 'family-tree.ged'; a.click();
+      const { members: exportMembers, parents: exportParents } = getExportData();
+      
+      let ged = `0 HEAD\n1 CHAR UTF-8\n1 GEDC\n2 VERS 5.5.1\n2 FORM LINEAGE-LINKED\n`;
+
+      // Individuals
+      exportMembers.forEach(m => {
+        ged += `0 @I${m.id}@ INDI\n`;
+        ged += `1 NAME ${m.name.replace(/\//g, '')} /${m.name.split(' ').pop()}/\n`;
+        ged += `1 SEX ${m.gender === 'male' ? 'M' : 'F'}\n`;
+        if (m.born_year) ged += `1 BIRT\n2 DATE ${m.born_year}\n`;
+        if (m.died_year) ged += `1 DEAT\n2 DATE ${m.died_year}\n`;
+        if (m.notes) ged += `1 NOTE ${m.notes}\n`;
+      });
+
+      // Families
+      const famMap = {}; // { "p1_p2": [childIds] }
+      exportMembers.forEach(m => {
+        const pids = exportParents
+          .filter(p => p.member_id === m.id)
+          .map(p => p.parent_id)
+          .sort();
+        
+        if (pids.length > 0) {
+          const key = pids.join('_');
+          if (!famMap[key]) famMap[key] = [];
+          famMap[key].push(m.id);
+        }
+      });
+
+      Object.entries(famMap).forEach(([pids, children], idx) => {
+        const ids = pids.split('_');
+        ged += `0 @F${idx+1}@ FAM\n`;
+        ids.forEach(pid => {
+          const p = exportMembers.find(m => m.id == pid);
+          if (p) {
+            if (p.gender === 'male') ged += `1 HUSB @I${p.id}@\n`;
+            else ged += `1 WIFE @I${p.id}@\n`;
+          }
+        });
+        children.forEach(cid => {
+          ged += `1 CHIL @I${cid}@\n`;
+        });
+      });
+
+      ged += `0 TRLR\n`;
+
+      const blob = new Blob([ged], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); 
+      a.href = url; 
+      a.download = selectedFamilyIndex === -1 ? 'family-tree.ged' : `family-${families[selectedFamilyIndex].root.name.toLowerCase().replace(/\s+/g, '-')}.ged`;
+      a.click();
       toast('✅ Data GEDCOM diekspor');
     } catch(e) { toast('❌ Gagal ekspor GEDCOM'); }
   };
@@ -75,7 +153,8 @@ export default function DataManage({ members }) {
 
   const handleExportSvg = async () => {
     try {
-      if(!members || members.length === 0) return toast('⚠️ Tidak ada data untuk diekspor');
+      const { members: exportMembers } = getExportData();
+      if(!exportMembers || exportMembers.length === 0) return toast('⚠️ Tidak ada data untuk diekspor');
       
       const container = document.createElement('div');
       container.style.position = 'absolute';
@@ -92,9 +171,9 @@ export default function DataManage({ members }) {
       const famsMap = new Map();
       const getFamId = pids => pids.slice().sort().join('-');
       
-      members.forEach(m => {
+      exportMembers.forEach(m => {
         if(m.spouse_id) {
-          const spouse = members.find(s => s.id === m.spouse_id);
+          const spouse = exportMembers.find(s => s.id === m.spouse_id);
           if(spouse) {
             const id = getFamId([m.id, m.spouse_id]);
             if(!famsMap.has(id)) {
@@ -103,22 +182,26 @@ export default function DataManage({ members }) {
           }
         }
         if(m.parentIds?.length) {
-          const id = getFamId(m.parentIds);
-          if(!famsMap.has(id)) famsMap.set(id, { id, husb: String(m.parentIds[0]), wife: String(m.parentIds[1] || ''), children: [] });
-          if (!famsMap.get(id).children.includes(String(m.id))) {
-            famsMap.get(id).children.push(String(m.id));
+          const validParentIds = m.parentIds.filter(pid => exportMembers.some(p => p.id === pid));
+          if (validParentIds.length > 0) {
+            const id = getFamId(validParentIds);
+            if(!famsMap.has(id)) famsMap.set(id, { id, husb: String(validParentIds[0]), wife: String(validParentIds[1] || ''), children: [] });
+            if (!famsMap.get(id).children.includes(String(m.id))) {
+              famsMap.get(id).children.push(String(m.id));
+            }
           }
         }
       });
       
-      members.forEach(m => {
+      exportMembers.forEach(m => {
         const famsForIndi = [];
         famsMap.forEach(f => { if(f.husb===String(m.id) || f.wife===String(m.id)) famsForIndi.push(f.id); });
+        const validParentIds = m.parentIds?.filter(pid => exportMembers.some(p => p.id === pid)) || [];
         indis.push({
           id: String(m.id), firstName: m.name, sex: m.gender==='male'?'M':'F',
           birth: m.born_year ? { date:{year:parseInt(m.born_year)} } : undefined,
           death: m.died_year ? { date:{year:parseInt(m.died_year)} } : undefined,
-          famc: m.parentIds?.length ? getFamId(m.parentIds) : undefined,
+          famc: validParentIds.length ? getFamId(validParentIds) : undefined,
           fams: famsForIndi.length ? famsForIndi : undefined
         });
       });
@@ -137,7 +220,7 @@ export default function DataManage({ members }) {
         svgSelector: `#${svgId}`,
         indiCallback: () => {}
       });
-      chart.render({ startIndi: String(members[0].id) });
+      chart.render({ startIndi: String(exportMembers[0].id) });
 
       const svgEl = container.querySelector('svg');
       
@@ -253,7 +336,22 @@ export default function DataManage({ members }) {
               <div style={{ fontSize:10, background:'#e2e8f0', padding:'2px 6px', borderRadius:4, width: 'fit-content', marginTop: 2 }}>BACKUP</div>
             </div>
           </div>
-          <p style={{ fontSize:13, color:'#64748b', marginBottom:20, lineHeight: 1.5 }}>Unduh data silsilah keluarga Anda untuk cadangan atau digunakan di aplikasi lain.</p>
+          <p style={{ fontSize:13, color:'#64748b', marginBottom:12, lineHeight: 1.5 }}>Unduh data silsilah keluarga Anda untuk cadangan atau digunakan di aplikasi lain.</p>
+          
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Pilih Keluarga:</label>
+            <select 
+              value={selectedFamilyIndex} 
+              onChange={(e) => setSelectedFamilyIndex(parseInt(e.target.value))}
+              style={{ width: '100%', padding: '10px', borderRadius: 10, border: '1.5px solid #e2e8f0', fontSize: 13, background: '#f8fafc', color: '#1e293b', outline: 'none' }}
+            >
+              <option value="-1">Semua Keluarga ({members.length} anggota)</option>
+              {families.map((fam, idx) => (
+                <option key={idx} value={idx}>Keluarga {fam.root.name} ({fam.members.length} anggota)</option>
+              ))}
+            </select>
+          </div>
+
           <div style={{ display:'flex', flexDirection: 'column', gap:12 }}>
             <button onClick={handleExportJson} style={{ width: '100%', padding:'12px', borderRadius:12, border:'2px solid #6366f1', color:'#6366f1', background:'transparent', fontWeight:700, cursor:'pointer', fontSize:13, transition: 'all 0.2s' }}>
               EKSPOR JSON
