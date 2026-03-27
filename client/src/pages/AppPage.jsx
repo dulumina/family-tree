@@ -21,6 +21,7 @@ export default function AppPage() {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [focusMemberId, setFocusMemberId] = useState(null);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [detailTab, setDetailTab] = useState('info'); // 'info' | 'mahrom'
   const [activeFamilyIndex, setActiveFamilyIndex] = useState(0);
   const { isAdmin, isEditor } = useAuth();
@@ -52,6 +53,16 @@ export default function AppPage() {
   }, []);
 
   useEffect(()=>{ load(); }, [load]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.search-container')) {
+        setShowSearchResults(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
 
 
@@ -107,27 +118,39 @@ export default function AppPage() {
     }
   }, [selected, families, activeFamilyIndex]);
 
+  const searchResults = useMemo(() => {
+    if (!search || search.length < 2) return [];
+    return members.filter(m =>
+      m.name.toLowerCase().includes(search.toLowerCase())
+    ).slice(0, 10);
+  }, [search, members]);
+
+  const getDescendantsIds = useCallback((rootId) => {
+    const result = new Set();
+    const queue = [rootId];
+    while (queue.length > 0) {
+      const currId = queue.shift();
+      if (result.has(currId)) continue;
+      result.add(currId);
+      const m = members.find(x => x.id === currId);
+      if (m?.spouse_id) result.add(m.spouse_id);
+      members.forEach(child => {
+        if (child.parentIds?.includes(currId)) {
+          queue.push(child.id);
+        }
+      });
+    }
+    return result;
+  }, [members]);
+
   let filtered = members;
   if (focusMemberId) {
-    const _focus = members.find(m => m.id === focusMemberId);
-    if (_focus) {
-      const parentIds = _focus.parentIds || [];
-      const spouseId = _focus.spouse_id;
-      const childrenIds = members.filter(m => m.parentIds?.includes(focusMemberId) || (spouseId && m.parentIds?.includes(spouseId))).map(m => m.id);
-      const allowedIds = new Set([focusMemberId, ...parentIds, ...childrenIds]);
-      if (spouseId) allowedIds.add(spouseId);
-      filtered = members.filter(m => allowedIds.has(m.id));
-    } else {
-      setFocusMemberId(null);
-    }
+    const allowedIds = getDescendantsIds(focusMemberId);
+    filtered = members.filter(m => allowedIds.has(m.id));
   } else {
     const familyMembers = families[activeFamilyIndex]?.members || [];
     const familyIds = new Set(familyMembers.map(m => m.id));
-    
-    filtered = members.filter(m =>
-      familyIds.has(m.id) &&
-      (!search || m.name.toLowerCase().includes(search.toLowerCase()))
-    );
+    filtered = members.filter(m => familyIds.has(m.id));
   }
 
   const handleSave = async f => {
@@ -152,10 +175,30 @@ export default function AppPage() {
 
       {/* Toolbar */}
       <div style={{ background:'#fff', padding:'10px 20px', display:'flex', gap:12, alignItems:'center', flexWrap:'wrap', borderBottom:'1px solid #f1f5f9', boxShadow:'0 1px 4px #0001' }}>
-        <div style={{ position:'relative', flex:1, minWidth:200 }}>
+        <div className="search-container" style={{ position:'relative', flex:1, minWidth:200 }}>
           <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)' }}>🔍</span>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari anggota keluarga..."
+          <input value={search} onChange={e=>{ setSearch(e.target.value); setShowSearchResults(true); }} placeholder="Cari anggota keluarga..."
+            onFocus={() => setShowSearchResults(true)}
             style={{ width:'100%', padding:'8px 12px 8px 34px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14, outline:'none', boxSizing:'border-box' }} />
+          {showSearchResults && searchResults.length > 0 && (
+            <div style={{ position:'absolute', top:'105%', left:0, right:0, background:'#fff', border:'1px solid #e2e8f0', borderRadius:12, boxShadow:'0 10px 25px #0002', zIndex:1000, overflow:'hidden' }}>
+              {searchResults.map(m => (
+                <div key={m.id} onClick={() => { setFocusMemberId(m.id); setSearch(''); setShowSearchResults(false); setSelected(m); }}
+                  style={{ padding:'10px 14px', cursor:'pointer', fontSize:14, borderBottom:'1px solid #f1f5f9', display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ fontSize:18 }}>{m.photo}</span>
+                  <div style={{ display:'flex', flexDirection:'column' }}>
+                    <span style={{ fontWeight:600, color:'#1e293b' }}>{m.name}</span>
+                    <span style={{ fontSize:11, color:'#64748b' }}>{genLabel(m.generation)} • {m.born_year || '?'}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {showSearchResults && search.length >= 2 && searchResults.length === 0 && (
+            <div style={{ position:'absolute', top:'105%', left:0, right:0, background:'#fff', border:'1px solid #e2e8f0', borderRadius:12, padding:'12px', fontSize:13, color:'#64748b', textAlign:'center', zIndex:1000 }}>
+              Tidak menemukan anggota "{search}"
+            </div>
+          )}
         </div>
         <div style={{ position: 'relative' }}>
           <button onClick={() => {
@@ -242,7 +285,7 @@ export default function AppPage() {
                       <div style={{ marginTop: 14 }}>
                         <button onClick={() => setFocusMemberId(focusMemberId === selected.id ? null : selected.id)}
                           style={{ width:'100%', padding:'8px', borderRadius:9, border:'1.5px solid #6366f1', background: focusMemberId === selected.id ? '#6366f1' : 'transparent', color: focusMemberId === selected.id ? '#fff' : '#6366f1', fontWeight:600, cursor:'pointer' }}>
-                          {focusMemberId === selected.id ? 'Tampilkan Semua Keluarga' : 'Tampilkan Keluarga Kecil'}
+                          {focusMemberId === selected.id ? 'Tampilkan Semua Keluarga' : 'Fokus & Lihat Keturunan'}
                         </button>
                       </div>
 
