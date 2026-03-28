@@ -52,7 +52,7 @@ export default function AuthPage() {
             {mode==='login'?'Daftar':'Masuk'}
           </span>
         </div>
-        {mode==='login' && (
+        {mode==='login' && !import.meta.env.PROD && (
           <div style={{ marginTop:16, padding:12, background:'#f8fafc', borderRadius:10, fontSize:12, color:'#94a3b8', textAlign:'center' }}>
             Demo: <b>admin@keluarga.id</b> / <b>admin123</b>
           </div>
