@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { membersApi } from '../../api';
+import { getMahromStatus } from '../../utils/mahromUtils';
 
 export function SearchSelect({ label, placeholder, initialIds, single, members, onSelect, excludeId }) {
   const [query, setQuery] = useState('');
@@ -14,13 +15,27 @@ export function SearchSelect({ label, placeholder, initialIds, single, members, 
       setLoading(true);
       try {
         const { data } = await membersApi.getAll(query);
-        setResults(data.filter(m => m.id !== excludeId));
+        let filtered = data.filter(m => m.id !== excludeId);
+        
+        // Custom filter for spouse or other logic
+        if (label === 'Pasangan' && members && excludeId) {
+          const currentPerson = members.find(m => m.id === excludeId);
+          if (currentPerson) {
+            filtered = filtered.filter(m => {
+              if (m.gender === currentPerson.gender) return false;
+              const status = getMahromStatus(currentPerson, m, members);
+              return !status || status.isMahrom !== true;
+            });
+          }
+        }
+        
+        setResults(filtered);
       } finally {
         setLoading(false);
       }
     }, 300);
     return () => clearTimeout(handler);
-  }, [query, open, excludeId]);
+  }, [query, open, excludeId, label, members]);
 
   useEffect(() => {
     const clickOut = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false); };
@@ -72,21 +87,55 @@ export function SearchSelect({ label, placeholder, initialIds, single, members, 
 }
 
 export default function MemberForm({ members, initial, onSave, onClose }) {
-  const [f, setF] = useState(initial || {
+  const [f, setF] = useState({
     name:'', gender:'male', born_year:'', died_year:'', photo:'🧑',
-    notes:'', spouse_id:null, parentIds:[]
+    notes:'', spouse_id:null, parentIds:[],
+    birth_place:'', birth_date:'', is_alive:1, death_date:'', burial_place:'',
+    ...initial
   });
   const s = (k,v) => setF(p=>({...p,[k]:v}));
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
-      {[['Nama Lengkap *','name','text'],['Tahun Lahir','born_year','text'],['Tahun Wafat','died_year','text']].map(([lbl,key,type])=>(
-        <div key={key} style={{ marginBottom:12 }}>
-          <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>{lbl}</label>
-          <input type={type} value={f[key]||''} onChange={e=>s(key,e.target.value)}
+    <div style={{ display:'flex', flexDirection:'column', gap:0, maxHeight: '80vh', overflowY: 'auto', paddingRight: 4 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ gridColumn: 'span 2', marginBottom: 12 }}>
+          <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Nama Lengkap *</label>
+          <input type="text" value={f.name||''} onChange={e=>s('name',e.target.value)}
             style={{ width:'100%', padding:'9px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14, boxSizing:'border-box' }} />
         </div>
-      ))}
+        
+        <div style={{ marginBottom:12 }}>
+          <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Tempat Lahir</label>
+          <input type="text" value={f.birth_place||''} onChange={e=>s('birth_place',e.target.value)}
+            style={{ width:'100%', padding:'9px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14, boxSizing:'border-box' }} />
+        </div>
+        <div style={{ marginBottom:12 }}>
+          <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Tanggal Lahir</label>
+          <input type="date" value={f.birth_date||''} onChange={e=>s('birth_date',e.target.value)}
+            style={{ width:'100%', padding:'9px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14, boxSizing:'border-box' }} />
+        </div>
+      </div>
+
+      <div style={{ marginBottom:12, display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e2e8f0' }}>
+        <input type="checkbox" id="is_alive" checked={f.is_alive === 1} onChange={e=>s('is_alive', e.target.checked ? 1 : 0)} 
+          style={{ width: 18, height: 18, cursor: 'pointer' }} />
+        <label htmlFor="is_alive" style={{ fontSize: 14, fontWeight: 600, color: '#334155', cursor: 'pointer' }}>Masih Hidup</label>
+      </div>
+
+      {f.is_alive === 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12, padding: 12, background: '#fff1f2', borderRadius: 12, border: '1.5px solid #fecaca' }}>
+          <div>
+            <label style={{ display:'block', fontSize:12, fontWeight:700, color:'#991b1b', marginBottom:4 }}>Tanggal Wafat</label>
+            <input type="date" value={f.death_date||''} onChange={e=>s('death_date',e.target.value)}
+              style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:'1.5px solid #fca5a5', fontSize:13 }} />
+          </div>
+          <div>
+            <label style={{ display:'block', fontSize:12, fontWeight:700, color:'#991b1b', marginBottom:4 }}>Tempat Dimakamkan</label>
+            <input type="text" value={f.burial_place||''} onChange={e=>s('burial_place',e.target.value)}
+              style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:'1.5px solid #fca5a5', fontSize:13 }} />
+          </div>
+        </div>
+      )}
       <div style={{ marginBottom:12 }}>
         <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Jenis Kelamin</label>
         <select value={f.gender} onChange={e=>s('gender', e.target.value)}

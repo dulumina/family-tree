@@ -6,7 +6,11 @@ export default function Navbar({ tab, setTab }) {
   const tabs = [
     ['tree', '🌲', 'Pohon'], 
     ['list', '📋', 'Daftar'], 
-    ...(isAdmin ? [['admin', '⚙️', 'Admin'], ['data', '💾', 'Manajemen Data']] : [])
+    ...(isAdmin ? [
+      ['admin', '👥', 'Pengguna'], 
+      ['data', '💾', 'Database'],
+      ['feedback', '📥', 'Saran / Kritik']
+    ] : [])
   ];
   return (
     <header style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', boxShadow: '0 2px 16px #0003' }}>

@@ -8,7 +8,10 @@ import MemberList from '../components/Members/MemberList';
 import MemberForm from '../components/Members/MemberForm';
 import UserManage from '../components/Admin/UserManage';
 import DataManage from '../components/Admin/DataManage';
+import FeedbackManage from '../components/Admin/FeedbackManage';
 import MahromPanel from '../components/Members/MahromPanel';
+import FeedbackModal from '../components/UI/FeedbackModal';
+import EventsPanel from '../components/Tree/EventsPanel';
 import { useToast } from '../components/UI/Toast';
 
 const genLabel = g => `Generasi ${g+1}`;
@@ -24,6 +27,8 @@ export default function AppPage() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [detailTab, setDetailTab] = useState('info'); // 'info' | 'mahrom'
   const [activeFamilyIndex, setActiveFamilyIndex] = useState(0);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackMemberId, setFeedbackMemberId] = useState(null);
   const { isAdmin, isEditor } = useAuth();
   const { toast } = useToast();
 
@@ -228,6 +233,11 @@ export default function AppPage() {
             + Tambah Anggota
           </button>
         )}
+        
+        <button onClick={() => { setFeedbackMemberId(null); setShowFeedback(true); }}
+          style={{ padding:'8px 14px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', color:'#6366f1', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+          <span>💡 Saran / Kritik</span>
+        </button>
       </div>
 
       {/* Content */}
@@ -237,8 +247,8 @@ export default function AppPage() {
             <div style={{ flex:1, borderRadius:16, overflow:'hidden', boxShadow:'0 4px 20px #0001', border:'1px solid #e2e8f0' }}>
               <TreeView members={filtered} selected={selected} onSelect={setSelected} />
             </div>
-            {selected && (
-              <div style={{ width:280, background:'#fff', borderRadius:16, boxShadow:'0 4px 20px #0001', border:'1px solid #e2e8f0', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+            {selected ? (
+              <div style={{ width:280, background:'#fff', borderRadius:16, boxShadow:'0 4px 20px #0001', border:'1.5px solid #e2e8f0', display:'flex', flexDirection:'column', overflow:'hidden' }}>
                 {/* Header */}
                 <div style={{ padding:'14px 16px 0', flexShrink:0 }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
@@ -270,16 +280,26 @@ export default function AppPage() {
                         <div style={{ fontSize:12, color:'#64748b' }}>{genLabel(selected.generation)}</div>
                       </div>
                       {[['⚧️ Gender', selected.gender==='male'?'Laki-laki':'Perempuan'],
-                        ['🎂 Lahir', selected.born_year||'-'],
-                        ['✝️ Wafat', selected.died_year||'Masih hidup'],
+                        ['📍 Lahir', selected.birth_place || selected.born_year || '-'],
+                        ['📅 Tgl Lahir', selected.birth_date || '-'],
+                        ['💀 Status', selected.is_alive === 0 ? 'Wafat' : 'Hidup'],
+                        selected.is_alive === 0 && ['⚰️ Tgl Wafat', selected.death_date || selected.died_year || '-'],
+                        selected.is_alive === 0 && ['🪦 Dimakamkan', selected.burial_place || '-'],
                         ['🔗 Orang Tua', (selected.parentIds||[]).map(pid=>members.find(m=>m.id===pid)?.name).filter(Boolean).join(', ')||'-'],
                         ['💑 Pasangan', members.find(m=>m.id===selected.spouse_id)?.name||'-']
-                      ].map(([lbl,val])=>(
+                      ].filter(Boolean).map(([lbl,val])=>(
                         <div key={lbl} style={{ display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:8 }}>
                           <span style={{ color:'#64748b' }}>{lbl}</span>
                           <span style={{ color:'#1e293b', fontWeight:500, textAlign:'right', maxWidth:150 }}>{val}</span>
                         </div>
                       ))}
+                      
+                      <div style={{ marginTop: 12, marginBottom: 16 }}>
+                        <button onClick={() => { setFeedbackMemberId(selected.id); setShowFeedback(true); }}
+                          style={{ width:'100%', padding:'6px', borderRadius:8, border:'1.5px dashed #cbd5e1', background:'transparent', color:'#64748b', fontSize:11, fontWeight:600, cursor:'pointer' }}>
+                          💡 Laporkan Koreksi Data
+                        </button>
+                      </div>
                       {selected.notes && <div style={{ marginTop:10, padding:10, background:'#f8fafc', borderRadius:8, fontSize:12, color:'#64748b', fontStyle:'italic' }}>{selected.notes}</div>}
                       
                       <div style={{ marginTop: 14 }}>
@@ -305,6 +325,16 @@ export default function AppPage() {
                   )}
                 </div>
               </div>
+            ) : (
+              <div style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <EventsPanel members={members} />
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '1.5px solid #86efac', 
+                  borderRadius: 16, padding: '16px', fontSize: 13, color: '#166534', lineHeight: 1.6
+                }}>
+                  <strong>💡 Tips:</strong> Klik pada anggota di pohon silsilah untuk melihat detail mahrom & hubungan kekerabatan.
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -315,12 +345,17 @@ export default function AppPage() {
 
         {tab==='admin' && isAdmin && <UserManage members={members} />}
         {tab==='data' && isAdmin && <DataManage members={members} />}
+        {tab==='feedback' && isAdmin && <FeedbackManage />}
       </div>
 
       {showForm && (
         <Modal title={editTarget?'✏️ Edit Anggota':'➕ Tambah Anggota'} onClose={()=>{setShowForm(false);setEditTarget(null);}}>
           <MemberForm members={members} initial={editTarget} onSave={handleSave} onClose={()=>{setShowForm(false);setEditTarget(null);}} />
         </Modal>
+      )}
+
+      {showFeedback && (
+        <FeedbackModal memberId={feedbackMemberId} onClose={() => setShowFeedback(false)} />
       )}
     </div>
   );
