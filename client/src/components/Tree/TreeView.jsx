@@ -110,6 +110,11 @@ export default function TreeView({ members, selected, onSelect }) {
       }
     });
 
+    // Identifikasi siapa saja yang merupakan keturunan (punya orang tua di dalam sistem ini)
+    const relativeIds = new Set(activeMembers.filter(m => 
+      m.parentIds && m.parentIds.some(pid => activeMembers.some(p => p.id === pid))
+    ).map(m => String(m.id)));
+
     activeMembers.forEach(m => {
       let famc = undefined;
       const validParentIds = m.parentIds ? m.parentIds.filter(pid => activeMembers.some(p => p.id === pid)) : [];
@@ -122,12 +127,15 @@ export default function TreeView({ members, selected, onSelect }) {
         if (isHusb) {
           famsForIndi.push(fam.id);
         } else if (isWife) {
-          // Jika terpilih atau tidak ada suami, berikan akses penuh ke anak
-          if (isSelected || !fam.husb) {
+          const husbIsRelative = fam.husb && relativeIds.has(String(fam.husb));
+          // Tampilkan anak di bawah ibu jika:
+          // 1. Ibu sedang dipilih (fokus)
+          // 2. Tidak ada suami
+          // 3. Suami bukan berasal dari keluarga ini (outsider), jadi tidak ada risiko duplikasi
+          if (isSelected || !fam.husb || !husbIsRelative) {
             famsForIndi.push(fam.id);
           } else {
-            // Jika bukan fokus utama dan ada suami, berikan link ke keluarga "spousal-only" (_s)
-            // agar suami tetap tampil di garis keturunan perempuan tanpa menduplikasi sub-pohon anak
+            // Hanya gunakan versi tanpa anak jika suami juga ada di garis keturunan (cegah duplikasi sub-pohon)
             famsForIndi.push(fam.id + '_s');
           }
         }
@@ -147,7 +155,6 @@ export default function TreeView({ members, selected, onSelect }) {
     const allFams = [];
     famsMap.forEach(fam => {
       allFams.push(fam);
-      // Tambahkan varian keluarga tanpa anak untuk mencegah duplikasi visual di branch non-utama
       allFams.push({ ...fam, id: fam.id + '_s', children: [] });
     });
 
