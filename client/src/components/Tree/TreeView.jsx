@@ -114,9 +114,23 @@ export default function TreeView({ members, selected, onSelect }) {
       let famc = undefined;
       const validParentIds = m.parentIds ? m.parentIds.filter(pid => activeMembers.some(p => p.id === pid)) : [];
       if (validParentIds.length > 0) famc = getFamId(validParentIds);
+      const isSelected = selected && String(selected.id) === String(m.id);
       const famsForIndi = [];
       famsMap.forEach(fam => {
-        if (fam.husb === String(m.id) || fam.wife === String(m.id)) famsForIndi.push(fam.id);
+        const isHusb = fam.husb === String(m.id);
+        const isWife = fam.wife === String(m.id);
+        if (isHusb) {
+          famsForIndi.push(fam.id);
+        } else if (isWife) {
+          // Jika terpilih atau tidak ada suami, berikan akses penuh ke anak
+          if (isSelected || !fam.husb) {
+            famsForIndi.push(fam.id);
+          } else {
+            // Jika bukan fokus utama dan ada suami, berikan link ke keluarga "spousal-only" (_s)
+            // agar suami tetap tampil di garis keturunan perempuan tanpa menduplikasi sub-pohon anak
+            famsForIndi.push(fam.id + '_s');
+          }
+        }
       });
       indis.push({
         id: String(m.id),
@@ -130,7 +144,14 @@ export default function TreeView({ members, selected, onSelect }) {
       });
     });
 
-    const json = { indis, fams: Array.from(famsMap.values()) };
+    const allFams = [];
+    famsMap.forEach(fam => {
+      allFams.push(fam);
+      // Tambahkan varian keluarga tanpa anak untuk mencegah duplikasi visual di branch non-utama
+      allFams.push({ ...fam, id: fam.id + '_s', children: [] });
+    });
+
+    const json = { indis, fams: allFams };
     
     const activeRoot = activeMembers.find(m => 
       m.gender === 'male' && 
