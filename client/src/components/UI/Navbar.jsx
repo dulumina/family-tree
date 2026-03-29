@@ -27,13 +27,13 @@ export default function Navbar({ tab, setTab }) {
           <button onClick={logout} style={{ background: '#fff2', border: '1px solid #fff4', color: '#fff', borderRadius: 8, padding: isMobile ? '4px 8px' : '5px 14px', cursor: 'pointer', fontSize: isMobile ? 11 : 13 }}>Keluar</button>
         </div>
       </div>
-      <div style={{ display: 'flex', padding: isMobile ? '0 6px' : '0 16px', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div style={{ display: 'flex', padding: isMobile ? '0 4px' : '0 16px', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {tabs.map(([k, icon, label]) => (
           <button key={k} onClick={() => setTab(k)} style={{
-            padding: isMobile ? '10px 12px' : '10px 20px', border: 'none', background: 'transparent',
-            color: tab === k ? '#fff' : '#c4b5fd', fontWeight: 700, fontSize: isMobile ? 12 : 14,
+            padding: isMobile ? '8px 8px' : '10px 20px', border: 'none', background: 'transparent',
+            color: tab === k ? '#fff' : '#c4b5fd', fontWeight: 700, fontSize: isMobile ? 11 : 14,
             borderBottom: tab === k ? '3px solid #fff' : '3px solid transparent',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: isMobile ? 4 : 6,
             transition: 'color 0.2s',
             whiteSpace: 'nowrap',
             flexShrink: 0

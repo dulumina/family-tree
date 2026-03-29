@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import * as topola from 'topola';
 import * as d3 from 'd3';
 import { useToast } from '../UI/Toast';
+import useMobile from '../../hooks/useMobile';
 
 const TREE_CSS = `
   .detailed text {
@@ -48,6 +49,7 @@ export default function TreeView({ members, selected, onSelect }) {
   const containerRef = useRef(null);
   const [showExport, setShowExport] = useState(false);
   const { toast } = useToast();
+  const isMobile = useMobile();
 
   const activeMembers = members || [];
 
@@ -178,9 +180,9 @@ export default function TreeView({ members, selected, onSelect }) {
     class CustomRenderer extends topola.DetailedRenderer {
       getPreferredIndiSize(id) {
         const size = super.getPreferredIndiSize(id);
-        // Tambah lebar +45px untuk avatar box agar layout tidak tumpang tindih
-        // Kurangi tinggi sedikit agar lebih rapat (default Topola agak lebar y-nya)
-        return [size[0] + 45, Math.max(42, size[1] - 8)];
+        const extraWidth = isMobile ? 30 : 45;
+        const height = isMobile ? 38 : Math.max(42, size[1] - 8);
+        return [size[0] + extraWidth, height];
       }
     }
 
@@ -225,7 +227,7 @@ export default function TreeView({ members, selected, onSelect }) {
 
         indiG.selectAll('text').remove();
 
-        const avatarW = 34; 
+        const avatarW = isMobile ? 24 : 34; 
         
         const isMale = bg.classed('male');
         const isFemale = bg.classed('female');
@@ -237,23 +239,24 @@ export default function TreeView({ members, selected, onSelect }) {
           .attr('fill', avatarBg)
           .attr('rx', 2).attr('ry', 2);
 
+        const avatarIconScale = h < 40 ? 0.7 : 1;
         indiG.insert('path', '.border')
           .attr('d', 'M17,10 c-3.3,0 -6,2.7 -6,6 c0,3.3 2.7,6 6,6 c3.3,0 6,-2.7 6,-6 c0,-3.3 -2.7,-6 -6,-6 z M17,24 c-6.6,0 -12,3.6 -12,8 v2 h24 v-2 c0,-4.4 -5.4,-8 -12,-8 z')
           .attr('fill', '#ffffff')
           .attr('opacity', 0.85)
-          .attr('transform', `translate(0, ${(h - 38)/2})`);
+          .attr('transform', `translate(${isMobile ? -4 : 0}, ${(h - (38 * avatarIconScale))/2}) scale(${avatarIconScale})`);
 
-        let currentY = 18;
+        let currentY = isMobile ? 14 : 18;
         texts.forEach(item => {
            indiG.append('text')
              .text(item.text)
-             .attr('x', avatarW + 8)
+             .attr('x', avatarW + (isMobile ? 5 : 8))
              .attr('y', currentY)
-             .attr('font-size', item.type === 'name' ? '11.5px' : '9.5px')
+             .attr('font-size', item.type === 'name' ? (isMobile ? '9px' : '11.5px') : (isMobile ? '7.5px' : '9.5px'))
              .attr('font-weight', item.type === 'name' ? '600' : '400')
              .attr('fill', '#111')
              .style('pointer-events', 'none');
-           currentY += item.type === 'name' ? 14 : 11;
+           currentY += item.type === 'name' ? (isMobile ? 11 : 14) : (isMobile ? 9 : 11);
         });
       });
 
@@ -272,13 +275,13 @@ export default function TreeView({ members, selected, onSelect }) {
       if (nodeBBox.width > 0 && nodeBBox.height > 0) {
         // Beri margin sedikit (padding 5%)
         const scale = Math.min(
-           (svgRect.width * 0.95) / nodeBBox.width,
-           (svgRect.height * 0.95) / nodeBBox.height,
-           1.2 // Max initial zoom scale
+           (svgRect.width * (isMobile ? 0.98 : 0.95)) / nodeBBox.width,
+           (svgRect.height * (isMobile ? 0.98 : 0.95)) / nodeBBox.height,
+           isMobile ? 1.5 : 1.2 // Max initial zoom scale
         );
         
         const tx = (svgRect.width - nodeBBox.width * scale) / 2 - nodeBBox.x * scale;
-        const ty = (svgRect.height - nodeBBox.height * scale) / 2 - nodeBBox.y * scale;
+        const ty = isMobile ? 20 : (svgRect.height - nodeBBox.height * scale) / 2 - nodeBBox.y * scale;
         
         svg.call(zoomSetup.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
       }
@@ -429,16 +432,16 @@ export default function TreeView({ members, selected, onSelect }) {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       {/* Export Button */}
-      <div className="export-container" style={{ position: 'absolute', top: 16, left: 16, zIndex: 50 }}>
+      <div className="export-container" style={{ position: 'absolute', top: isMobile ? 8 : 16, left: isMobile ? 8 : 16, zIndex: 50 }}>
         <button 
           onClick={() => setShowExport(!showExport)}
           style={{ 
-            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 10, 
+            display: 'flex', alignItems: 'center', gap: isMobile ? 4 : 8, padding: isMobile ? '6px 10px' : '8px 14px', borderRadius: 10, 
             background: '#fff', border: '1.5px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-            cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#475569', transition: 'all 0.2s'
+            cursor: 'pointer', fontSize: isMobile ? 11 : 13, fontWeight: 700, color: '#475569', transition: 'all 0.2s'
           }}
         >
-          <span>📤 Ekspor</span>
+          <span>📤 {isMobile ? '' : 'Ekspor'}</span>
           <span style={{ fontSize: 10, opacity: 0.6 }}>▼</span>
         </button>
 
