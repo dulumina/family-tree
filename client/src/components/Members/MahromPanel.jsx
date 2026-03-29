@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useMemo, useState } from 'react';
 import { categorizeMahrom } from '../../utils/mahromUtils';
+import useMobile from '../../hooks/useMobile';
 
 const CATEGORY_ICONS = {
   direct_ascendant: '⬆️',
@@ -108,6 +109,7 @@ function Section({ title, color, bgColor, borderColor, icon, children, defaultOp
 }
 
 export default function MahromPanel({ person, allMembers }) {
+  const isMobile = useMobile();
   const { mahrom, bukan_mahrom } = useMemo(
     () => categorizeMahrom(person, allMembers),
     [person, allMembers]
@@ -166,19 +168,19 @@ export default function MahromPanel({ person, allMembers }) {
           background: '#fef2f2',
         }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 18 }}>🚫</span>
-            <span style={{ fontWeight: 700, fontSize: 13, color: '#dc2626' }}>
-              MAHROM ({sortedMahrom.length})
+            <span style={{ fontSize: isMobile ? 16 : 18 }}>🚫</span>
+            <span style={{ fontWeight: 700, fontSize: isMobile ? 12 : 13, color: '#dc2626' }}>
+              {isMobile ? 'MAHROM' : 'MAHROM'} ({sortedMahrom.length})
             </span>
           </span>
           <span style={{
-            fontSize: 10,
+            fontSize: isMobile ? 9 : 10,
             background: '#dc2626',
             color: '#fff',
             padding: '2px 8px',
             borderRadius: 999,
             fontWeight: 700,
-          }}>Haram dinikahi</span>
+          }}>{isMobile ? '🚫 Haram' : 'Haram dinikahi'}</span>
         </div>
         <div style={{ padding: '10px 12px', background: '#fff' }}>
           {sortedMahrom.length === 0 ? (
@@ -209,19 +211,19 @@ export default function MahromPanel({ person, allMembers }) {
             background: '#eff6ff',
           }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 18 }}>✅</span>
-              <span style={{ fontWeight: 700, fontSize: 13, color: '#1d4ed8' }}>
-                BUKAN MAHROM — Kerabat ({kerabatBukanMahrom.length})
+              <span style={{ fontSize: isMobile ? 16 : 18 }}>✅</span>
+              <span style={{ fontWeight: 700, fontSize: isMobile ? 12 : 13, color: '#1d4ed8' }}>
+                {isMobile ? 'NON-MAHROM' : 'BUKAN MAHROM'} ({kerabatBukanMahrom.length})
               </span>
             </span>
             <span style={{
-              fontSize: 10,
+              fontSize: isMobile ? 9 : 10,
               background: '#1d4ed8',
               color: '#fff',
               padding: '2px 8px',
               borderRadius: 999,
               fontWeight: 700,
-            }}>Boleh menikah</span>
+            }}>{isMobile ? '✅ Boleh' : 'Boleh menikah'}</span>
           </div>
           <div style={{ padding: '10px 12px', background: '#fff' }}>
             {kerabatBukanMahrom.map((item, i) => (

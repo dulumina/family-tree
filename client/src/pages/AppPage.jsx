@@ -13,6 +13,7 @@ import MahromPanel from '../components/Members/MahromPanel';
 import FeedbackModal from '../components/UI/FeedbackModal';
 import EventsPanel from '../components/Tree/EventsPanel';
 import { useToast } from '../components/UI/Toast';
+import useMobile from '../hooks/useMobile';
 
 const genLabel = g => `Generasi ${g+1}`;
 
@@ -31,6 +32,7 @@ export default function AppPage() {
   const [feedbackMemberId, setFeedbackMemberId] = useState(null);
   const { isAdmin, isEditor } = useAuth();
   const { toast } = useToast();
+  const isMobile = useMobile();
 
   const load = useCallback(async () => {
     const { data } = await membersApi.getAll();
@@ -179,8 +181,20 @@ export default function AppPage() {
       <Navbar tab={tab} setTab={setTab} />
 
       {/* Toolbar */}
-      <div style={{ background:'#fff', padding:'10px 20px', display:'flex', gap:12, alignItems:'center', flexWrap:'wrap', borderBottom:'1px solid #f1f5f9', boxShadow:'0 1px 4px #0001' }}>
-        <div className="search-container" style={{ position:'relative', flex:1, minWidth:200 }}>
+      <div style={{ 
+        background:'#fff', 
+        padding: isMobile ? '8px 12px' : '10px 20px', 
+        display:'flex', 
+        gap: isMobile ? 8 : 12, 
+        alignItems:'center', 
+        flexWrap:'wrap', 
+        borderBottom:'1px solid #f1f5f9', 
+        boxShadow:'0 1px 4px #0001',
+        position: 'sticky',
+        top: isMobile ? 95 : 105, // Below navbar
+        zIndex: 100
+      }}>
+        <div className="search-container" style={{ position:'relative', flex: isMobile ? '1 1 100%' : 1, minWidth: isMobile ? '100%' : 200, order: isMobile ? 2 : 1 }}>
           <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)' }}>🔍</span>
           <input value={search} onChange={e=>{ setSearch(e.target.value); setShowSearchResults(true); }} placeholder="Cari anggota keluarga..."
             onFocus={() => setShowSearchResults(true)}
@@ -205,16 +219,16 @@ export default function AppPage() {
             </div>
           )}
         </div>
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', flex: isMobile ? 1 : 'none', order: isMobile ? 1 : 2 }}>
           <button onClick={() => {
               const d = document.getElementById('family-dropdown');
               d.style.display = d.style.display === 'none' ? 'block' : 'none';
             }}
-            style={{ padding:'8px 16px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}>
-            <span>👨‍👩‍👧‍👦 {families[activeFamilyIndex] ? `Keluarga ${families[activeFamilyIndex].root.name}` : 'Pilih Keluarga'}</span>
+            style={{ width: isMobile ? '100%' : 'auto', padding:'8px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent: 'space-between', gap:8 }}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>👨‍👩‍👧‍👦 {families[activeFamilyIndex] ? `Keluarga ${families[activeFamilyIndex].root.name}` : 'Pilih Keluarga'}</span>
             <span style={{ fontSize:10 }}>▼</span>
           </button>
-          <div id="family-dropdown" style={{ display:'none', position:'absolute', top:'100%', left:0, background:'#fff', border:'1.5px solid #e2e8f0', borderRadius:12, marginTop:8, padding:10, boxShadow:'0 10px 25px #0002', zIndex:101, minWidth:200 }}>
+          <div id="family-dropdown" style={{ display:'none', position:'absolute', top:'100%', left:0, right: isMobile ? 0 : 'auto', background:'#fff', border:'1.5px solid #e2e8f0', borderRadius:12, marginTop:8, padding:10, boxShadow:'0 10px 25px #0002', zIndex:1001, minWidth:200 }}>
             <div style={{ maxHeight: 300, overflowY: 'auto' }}>
               {families.map((fam, idx) => (
                 <div key={idx} onClick={() => { setActiveFamilyIndex(idx); document.getElementById('family-dropdown').style.display = 'none'; }}
@@ -229,26 +243,32 @@ export default function AppPage() {
 
         {isEditor && (
           <button onClick={()=>{setEditTarget(null);setShowForm(true);}}
-            style={{ padding:'8px 18px', borderRadius:10, border:'none', background:'linear-gradient(135deg,#10b981,#059669)', color:'#fff', fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
-            + Tambah Anggota
+            style={{ flex: isMobile ? 1 : 'none', order: isMobile ? 1 : 3, padding:'8px 12px', borderRadius:10, border:'none', background:'linear-gradient(135deg,#10b981,#059669)', color:'#fff', fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', fontSize: isMobile ? 13 : 14 }}>
+            {isMobile ? '+ Anggota' : '+ Tambah Anggota'}
           </button>
         )}
         
         <button onClick={() => { setFeedbackMemberId(null); setShowFeedback(true); }}
-          style={{ padding:'8px 14px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', color:'#6366f1', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
-          <span>💡 Saran / Kritik</span>
+          style={{ width: isMobile ? 40 : 'auto', height: isMobile ? 40 : 'auto', padding: isMobile ? '0' : '8px 14px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', color:'#6366f1', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent: 'center', gap:6, order: 4 }}>
+          <span>💡</span>
+          {!isMobile && <span>Saran / Kritik</span>}
         </button>
       </div>
 
       {/* Content */}
-      <div style={{ flex:1, padding:20, overflow:'auto' }}>
+      <div style={{ flex:1, padding: isMobile ? 12 : 20, overflow:'auto' }}>
         {tab==='tree' && (
-          <div style={{ display:'flex', gap:16, height:'calc(100vh - 200px)' }}>
-            <div style={{ flex:1, borderRadius:16, overflow:'hidden', boxShadow:'0 4px 20px #0001', border:'1px solid #e2e8f0' }}>
+          <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', gap:16, height: isMobile ? 'auto' : 'calc(100vh - 200px)' }}>
+            <div style={{ flex:1, minHeight: isMobile ? 400 : 'auto', borderRadius:16, overflow:'hidden', boxShadow:'0 4px 20px #0001', border:'1px solid #e2e8f0' }}>
               <TreeView members={filtered} selected={selected} onSelect={setSelected} />
             </div>
             {selected ? (
-              <div style={{ width:280, background:'#fff', borderRadius:16, boxShadow:'0 4px 20px #0001', border:'1.5px solid #e2e8f0', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+              <div style={{ 
+                width: isMobile ? '100%' : 280, 
+                background:'#fff', borderRadius:16, boxShadow:'0 4px 20px #0001', border:'1.5px solid #e2e8f0', 
+                display:'flex', flexDirection:'column', overflow:'hidden',
+                maxHeight: isMobile ? 'none' : '100%'
+              }}>
                 {/* Header */}
                 <div style={{ padding:'14px 16px 0', flexShrink:0 }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
@@ -326,7 +346,7 @@ export default function AppPage() {
                 </div>
               </div>
             ) : (
-              <div style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ width: isMobile ? '100%' : 280, display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <EventsPanel members={members} />
                 <div style={{ 
                   background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '1.5px solid #86efac', 

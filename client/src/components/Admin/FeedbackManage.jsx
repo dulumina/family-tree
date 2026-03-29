@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { feedbackApi } from '../../api';
 import { useToast } from '../UI/Toast';
+import useMobile from '../../hooks/useMobile';
 
 export default function FeedbackManage() {
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const isMobile = useMobile();
 
   const load = async () => {
     try {
@@ -42,9 +44,9 @@ export default function FeedbackManage() {
 
   return (
     <div style={{ padding: '4px 0' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-        <h3 style={{ margin:0, color:'#1e293b' }}>📥 Semua Saran / Kritik</h3>
-        <button onClick={load} style={{ padding:'6px 12px', borderRadius:8, border:'1.5px solid #e2e8f0', background:'#fff', fontSize:13, fontWeight:600, cursor:'pointer' }}>🔄 Segarkan</button>
+      <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent:'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom:20, gap: 10 }}>
+        <h3 style={{ margin:0, color:'#1e293b', fontSize: isMobile ? 18 : 22 }}>📥 Saran / Kritik</h3>
+        <button onClick={load} style={{ width: isMobile ? '100%' : 'auto', padding:'6px 12px', borderRadius:8, border:'1.5px solid #e2e8f0', background:'#fff', fontSize:13, fontWeight:600, cursor:'pointer' }}>🔄 Segarkan</button>
       </div>
 
       {feedbacks.length === 0 ? (
@@ -58,16 +60,18 @@ export default function FeedbackManage() {
               background:'#fff', padding:16, borderRadius:12, border:'1.5px solid #e2e8f0',
               display:'flex', flexDirection:'column', gap:8
             }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+              <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent:'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 6 }}>
                 <div>
-                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <span style={{ fontWeight:700, color:'#1e293b' }}>{f.user_name || 'Anonim'}</span>
-                    {f.email && <span style={{ fontSize:12, color:'#64748b' }}>({f.email})</span>}
-                    {f.member_id && <span style={{ fontSize:10, background:'#e0e7ff', color:'#4338ca', padding:'1px 6px', borderRadius:4 }}>ID Anggota: {f.member_id}</span>}
+                  <div style={{ display:'flex', flexWrap: 'wrap', alignItems:'center', gap: isMobile ? 4 : 8 }}>
+                    <span style={{ fontWeight:700, color:'#1e293b', fontSize: isMobile ? 14 : 16 }}>{f.user_name || 'Anonim'}</span>
+                    {f.email && <span style={{ fontSize: isMobile ? 11 : 12, color:'#64748b' }}>({f.email})</span>}
                   </div>
-                  <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>{new Date(f.created_at).toLocaleString('id-ID')}</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                    {f.member_id && <span style={{ fontSize:10, background:'#e0e7ff', color:'#4338ca', padding:'1px 6px', borderRadius:4 }}>Anggota ID: {f.member_id}</span>}
+                    <div style={{ fontSize:10, color:'#94a3b8' }}>{new Date(f.created_at).toLocaleString('id-ID')}</div>
+                  </div>
                 </div>
-                <div style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', color: getStatusColor(f.status), padding:'2px 8px', borderRadius:6, border:`1px solid ${getStatusColor(f.status)}` }}>
+                <div style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', color: getStatusColor(f.status), padding:'2px 8px', borderRadius:6, border:`1px solid ${getStatusColor(f.status)}`, background: '#fff' }}>
                   {f.status}
                 </div>
               </div>

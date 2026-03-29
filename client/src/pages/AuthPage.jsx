@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import useMobile from '../hooks/useMobile';
 
 export default function AuthPage() {
+  const isMobile = useMobile();
   const [mode, setMode] = useState('login');
   const [form, setForm] = useState({ name:'', email:'', password:'' });
   const [err, setErr] = useState('');
@@ -19,8 +21,8 @@ export default function AuthPage() {
   };
 
   return (
-    <div style={{ minHeight:'100vh', background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <div style={{ background:'#fff', borderRadius:24, padding:36, width:360, boxShadow:'0 24px 60px #0004' }}>
+    <div style={{ minHeight:'100vh', background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)', display:'flex', alignItems:'center', justifyContent:'center', padding: 20 }}>
+      <div style={{ background:'#fff', borderRadius:24, padding: isMobile ? '24px 20px' : 36, width:'100%', maxWidth: 380, boxShadow:'0 24px 60px #0004' }}>
         <div style={{ textAlign:'center', marginBottom:28 }}>
           <div style={{ fontSize:52, marginBottom:8 }}>🌳</div>
           <h1 style={{ margin:0, fontSize:22, color:'#1e293b' }}>{mode==='login'?'Masuk':'Daftar Akun'}</h1>

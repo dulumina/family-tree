@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { membersApi } from '../../api';
 import { getMahromStatus } from '../../utils/mahromUtils';
+import useMobile from '../../hooks/useMobile';
 
 export function SearchSelect({ label, placeholder, initialIds, single, members, onSelect, excludeId }) {
   const [query, setQuery] = useState('');
@@ -87,6 +88,7 @@ export function SearchSelect({ label, placeholder, initialIds, single, members, 
 }
 
 export default function MemberForm({ members, initial, onSave, onClose }) {
+  const isMobile = useMobile();
   const [f, setF] = useState({
     name:'', gender:'male', born_year:'', died_year:'', photo:'🧑',
     notes:'', spouse_id:null, parentIds:[],
@@ -96,8 +98,8 @@ export default function MemberForm({ members, initial, onSave, onClose }) {
   const s = (k,v) => setF(p=>({...p,[k]:v}));
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:0, maxHeight: '80vh', overflowY: 'auto', paddingRight: 4 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap:0, maxHeight: isMobile ? '70vh' : '80vh', overflowY: 'auto', paddingRight: 4 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
         <div style={{ gridColumn: 'span 2', marginBottom: 12 }}>
           <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Nama Lengkap *</label>
           <input type="text" value={f.name||''} onChange={e=>s('name',e.target.value)}
@@ -123,7 +125,7 @@ export default function MemberForm({ members, initial, onSave, onClose }) {
       </div>
 
       {f.is_alive === 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12, padding: 12, background: '#fff1f2', borderRadius: 12, border: '1.5px solid #fecaca' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 12, padding: 12, background: '#fff1f2', borderRadius: 12, border: '1.5px solid #fecaca' }}>
           <div>
             <label style={{ display:'block', fontSize:12, fontWeight:700, color:'#991b1b', marginBottom:4 }}>Tanggal Wafat</label>
             <input type="date" value={f.death_date||''} onChange={e=>s('death_date',e.target.value)}
