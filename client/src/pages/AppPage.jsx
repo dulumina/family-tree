@@ -256,23 +256,33 @@ export default function AppPage() {
       </div>
 
       {/* Content */}
-      <div style={{ flex:1, padding: isMobile && tab==='tree' ? '8px 4px 0' : (isMobile ? 12 : 20), overflow: tab==='tree'?'hidden':'auto' }}>
+      <div style={{ flex:1, padding: tab==='tree' ? 0 : (isMobile ? 12 : 20), overflow: tab==='tree'?'hidden':'auto' }}>
         {tab==='tree' && (
           <div style={{ 
-            display:'flex', 
-            flexDirection: isMobile ? 'column' : 'row', 
-            gap: isMobile ? 8 : 16, 
-            height: isMobile ? 'calc(100vh - 175px)' : 'calc(100vh - 200px)' 
+            position: 'relative',
+            height: isMobile ? 'calc(100vh - 180px)' : 'calc(100vh - 165px)',
+            background: '#fff',
+            overflow: 'hidden',
           }}>
-            <div style={{ flex:1, height: '100%', borderRadius:16, overflow:'hidden', boxShadow:'0 4px 20px #0001', border:'1px solid #e2e8f0' }}>
-              <TreeView members={filtered} selected={selected} onSelect={setSelected} />
-            </div>
+            <TreeView members={filtered} selected={selected} onSelect={setSelected} />
+            
+            {/* Floating Overlays */}
             {selected ? (
               <div style={{ 
-                width: isMobile ? '100%' : 280, 
-                background:'#fff', borderRadius:16, boxShadow:'0 4px 20px #0001', border:'1.5px solid #e2e8f0', 
-                display:'flex', flexDirection:'column', overflow:'hidden',
-                maxHeight: isMobile ? 'none' : '100%'
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                bottom: 12,
+                width: isMobile ? 'calc(100% - 24px)' : 300, 
+                background: 'rgba(255, 255, 255, 0.95)', 
+                backdropFilter: 'blur(8px)',
+                borderRadius: 16, 
+                boxShadow: '0 4px 25px rgba(0,0,0,0.15)', 
+                border: '1.5px solid #e2e8f0', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                overflow: 'hidden',
+                zIndex: 10
               }}>
                 {/* Header */}
                 <div style={{ padding:'14px 16px 0', flexShrink:0 }}>
@@ -326,14 +336,6 @@ export default function AppPage() {
                         </button>
                       </div>
 
-                      {isMobile && !selected.notes && (
-                         <div style={{ 
-                           background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '1.5px solid #86efac', 
-                           borderRadius: 12, padding: '10px 12px', fontSize: 11, color: '#166534', lineHeight: 1.5, marginBottom: 12
-                         }}>
-                           <strong>💡 Tips:</strong> Klik anggota lain di pohon untuk melihat hubungan kekerabatan.
-                         </div>
-                      )}
                       {selected.notes && <div style={{ marginTop:10, padding:10, background:'#f8fafc', borderRadius:8, fontSize:12, color:'#64748b', fontStyle:'italic' }}>{selected.notes}</div>}
                       
                       <div style={{ marginTop: 14 }}>
@@ -361,38 +363,21 @@ export default function AppPage() {
               </div>
             ) : (
               <div style={{ 
-                width: isMobile ? '100%' : 280, 
-                display: 'flex', 
-                flexDirection: isMobile ? 'row' : 'column', 
-                gap: 12,
-                overflowX: isMobile ? 'auto' : 'visible',
-                paddingBottom: isMobile ? 10 : 0,
-                alignItems: isMobile ? 'center' : 'stretch'
+                position: 'absolute',
+                bottom: 12,
+                right: 12,
+                width: isMobile ? 'calc(100% - 24px)' : 260,
+                maxHeight: '40%',
+                overflowY: 'auto',
+                pointerEvents: 'auto',
+                zIndex: 10
               }}>
-                <div style={{ flexShrink: 0, width: isMobile ? 260 : 'auto' }}>
-                  <EventsPanel members={members} />
-                </div>
-                {!isMobile && (
-                  <div style={{ 
-                    background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '1.5px solid #86efac', 
-                    borderRadius: 16, padding: '16px', fontSize: 13, color: '#166534', lineHeight: 1.6
-                  }}>
-                    <strong>💡 Tips:</strong> Klik pada anggota di pohon silsilah untuk melihat detail mahrom & hubungan kekerabatan.
-                  </div>
-                )}
-                {isMobile && (
-                   <div style={{ 
-                    flexShrink: 0, width: 200,
-                    background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '1.5px solid #86efac', 
-                    borderRadius: 16, padding: '12px', fontSize: 11, color: '#166534', lineHeight: 1.4
-                  }}>
-                    <strong>💡 Tips:</strong> Klik anggota dqlam pohon untuk melihat detail.
-                  </div>
-                )}
+                <EventsPanel members={members} />
               </div>
             )}
           </div>
         )}
+
 
         {tab==='list' && (
           <MemberList members={filtered} onEdit={m=>{setEditTarget(m);setShowForm(true);}} onDelete={handleDelete} />

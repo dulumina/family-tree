@@ -48,6 +48,7 @@ const TREE_CSS = `
 export default function TreeView({ members, selected, onSelect }) {
   const containerRef = useRef(null);
   const [showExport, setShowExport] = useState(false);
+  const [resizeKey, setResizeKey] = useState(0);
   const { toast } = useToast();
   const isMobile = useMobile();
 
@@ -277,7 +278,7 @@ export default function TreeView({ members, selected, onSelect }) {
         const scale = Math.min(
            (svgRect.width * (isMobile ? 0.98 : 0.95)) / nodeBBox.width,
            (svgRect.height * (isMobile ? 0.98 : 0.95)) / nodeBBox.height,
-           isMobile ? 1.5 : 1.2 // Max initial zoom scale
+           2.5 // Max initial zoom scale
         );
         
         const tx = (svgRect.width - nodeBBox.width * scale) / 2 - nodeBBox.x * scale;
@@ -285,11 +286,32 @@ export default function TreeView({ members, selected, onSelect }) {
         
         svg.call(zoomSetup.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
       }
+      // Trigger re-fit after a tick to ensure container size is settled
+      requestAnimationFrame(() => {
+        const svgRectFit = containerRef.current.getBoundingClientRect();
+        const nodeBBoxFit = g.node().getBBox();
+        if (nodeBBoxFit.width > 0 && nodeBBoxFit.height > 0) {
+          const s = Math.min(
+             (svgRectFit.width * (isMobile ? 0.98 : 0.95)) / nodeBBoxFit.width,
+             (svgRectFit.height * (isMobile ? 0.98 : 0.95)) / nodeBBoxFit.height,
+             2.5
+          );
+          const txFit = (svgRectFit.width - nodeBBoxFit.width * s) / 2 - nodeBBoxFit.x * s;
+          const tyFit = isMobile ? 20 : (svgRectFit.height - nodeBBoxFit.height * s) / 2 - nodeBBoxFit.y * s;
+          svg.call(zoomSetup.transform, d3.zoomIdentity.translate(txFit, tyFit).scale(s));
+        }
+      });
 
     } catch (e) {
       console.error("Topola render error:", e);
     }
-  }, [activeMembers, onSelect]); // only depend on activeMembers and onSelect
+  }, [activeMembers, onSelect, isMobile, resizeKey]); // added resizeKey to deps
+
+  useEffect(() => {
+    const handleResize = () => setResizeKey(k => k + 1);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
