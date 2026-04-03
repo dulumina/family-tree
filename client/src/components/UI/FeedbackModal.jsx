@@ -49,7 +49,7 @@ export default function FeedbackModal({ memberId, onClose }) {
             <>
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Nama Anda (Opsional)</label>
-                <input type="text" value={f.user_name} onChange={e => setF({ ...f, user_name: e.target.value })}
+                <input type="text" value={f.user_name} onChange={e => setF({ ...f, user_name: e.target.value.replace(/\b\w/g, c => c.toUpperCase()) })}
                   placeholder="Nama lengkap"
                   style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, outline: 'none' }} />
               </div>

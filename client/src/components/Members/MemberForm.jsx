@@ -102,13 +102,13 @@ export default function MemberForm({ members, initial, onSave, onClose }) {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
         <div style={{ gridColumn: 'span 2', marginBottom: 12 }}>
           <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Nama Lengkap *</label>
-          <input type="text" value={f.name||''} onChange={e=>s('name',e.target.value)}
+          <input type="text" value={f.name||''} onChange={e=>s('name', e.target.value.replace(/\b\w/g, c => c.toUpperCase()))}
             style={{ width:'100%', padding:'9px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14, boxSizing:'border-box' }} />
         </div>
         
         <div style={{ marginBottom:12 }}>
           <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#475569', marginBottom:4 }}>Tempat Lahir</label>
-          <input type="text" value={f.birth_place||''} onChange={e=>s('birth_place',e.target.value)}
+          <input type="text" value={f.birth_place||''} onChange={e=>s('birth_place', e.target.value.replace(/\b\w/g, c => c.toUpperCase()))}
             style={{ width:'100%', padding:'9px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14, boxSizing:'border-box' }} />
         </div>
         <div style={{ marginBottom:12 }}>
@@ -133,7 +133,7 @@ export default function MemberForm({ members, initial, onSave, onClose }) {
           </div>
           <div>
             <label style={{ display:'block', fontSize:12, fontWeight:700, color:'#991b1b', marginBottom:4 }}>Tempat Dimakamkan</label>
-            <input type="text" value={f.burial_place||''} onChange={e=>s('burial_place',e.target.value)}
+            <input type="text" value={f.burial_place||''} onChange={e=>s('burial_place', e.target.value.replace(/\b\w/g, c => c.toUpperCase()))}
               style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:'1.5px solid #fca5a5', fontSize:13 }} />
           </div>
         </div>
