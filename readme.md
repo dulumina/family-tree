@@ -1,4 +1,4 @@
-# 🌳 Dulumina Family Tree
+# 🌳 Family Tree
 
 Visualisasikan warisan dan sejarah keluarga Anda dalam satu platform yang modern, interaktif, dan mudah digunakan.
 
@@ -44,13 +44,23 @@ npm install
 npm run dev
 ```
 
-Akses aplikasi di: `http://localhost:5173`
+Akses aplikasi di: `http://localhost:3001`
 
 ## 📁 Struktur Folder
 
 -   `/client`: Source code frontend (React).
 -   `/server`: Source code backend & API (Express).
 -   `/server/data/family.db`: Database SQLite lokal.
+
+---
+
+## ☕ Dukungan & Donasi
+
+Jika Anda merasa aplikasi ini bermanfaat dan ingin memberikan dukungan untuk pengembangannya, Anda dapat berdonasi melalui:
+
+-   **DANA**: `085212409490`
+
+Terima kasih atas dukungan Anda!
 
 ---
 
