@@ -30,6 +30,17 @@ export function SearchSelect({ label, placeholder, initialIds, single, members, 
           }
         }
         
+        // Add Orang Tua logic
+        if (label === 'Orang Tua' && members) {
+          const selectedParentMembers = initialIds.map(id => members.find(m => m.id === id)).filter(Boolean);
+          if (selectedParentMembers.length === 1) {
+            const parentGender = selectedParentMembers[0].gender;
+            filtered = filtered.filter(m => m.gender !== parentGender || initialIds.includes(m.id));
+          } else if (selectedParentMembers.length >= 2) {
+            filtered = filtered.filter(m => initialIds.includes(m.id));
+          }
+        }
+        
         setResults(filtered);
       } finally {
         setLoading(false);
@@ -49,11 +60,12 @@ export function SearchSelect({ label, placeholder, initialIds, single, members, 
   const toggle = (m) => {
     if (single) {
       onSelect(m.id === initialIds[0] ? [] : [m.id]);
-      setOpen(false); setQuery('');
     } else {
       const isSelected = initialIds.includes(m.id);
       onSelect(isSelected ? initialIds.filter(id => id !== m.id) : [...initialIds, m.id]);
     }
+    setOpen(false);
+    setQuery('');
   };
 
   return (
