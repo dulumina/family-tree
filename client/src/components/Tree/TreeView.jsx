@@ -47,8 +47,8 @@ const TREE_CSS = `
 
 export default function TreeView({ members, selected, onSelect }) {
   const containerRef = useRef(null);
-  const [showExport, setShowExport] = useState(false);
   const [resizeKey, setResizeKey] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const { toast } = useToast();
   const isMobile = useMobile();
 
@@ -309,196 +309,48 @@ export default function TreeView({ members, selected, onSelect }) {
 
   useEffect(() => {
     const handleResize = () => setResizeKey(k => k + 1);
+    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!e.target.closest('.export-container')) {
-        setShowExport(false);
-      }
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      document.removeEventListener('fullscreenchange', handleFsChange);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleExportJson = () => {
-    try {
-      const memberIds = new Set(activeMembers.map(m => m.id));
-      const parents = [];
-      activeMembers.forEach(m => {
-        if (m.parentIds) {
-          m.parentIds.forEach(pid => {
-            if (memberIds.has(pid)) {
-              parents.push({ member_id: m.id, parent_id: pid });
-            }
-          });
-        }
-      });
-      const data = { members: activeMembers, parents };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); 
-      a.href = url; 
-      a.download = 'family-tree-view.json';
-      a.click();
-      toast('✅ Data JSON diekspor');
-      setShowExport(false);
-    } catch(e) { toast('❌ Gagal ekspor JSON'); }
-  };
-
-  const handleExportGedcom = () => {
-    try {
-      const memberIds = new Set(activeMembers.map(m => m.id));
-      const parents = [];
-      activeMembers.forEach(m => {
-        if (m.parentIds) {
-          m.parentIds.forEach(pid => {
-            if (memberIds.has(pid)) parents.push({ member_id: m.id, parent_id: pid });
-          });
-        }
-      });
-
-      let ged = `0 HEAD\n1 CHAR UTF-8\n1 GEDC\n2 VERS 5.5.1\n2 FORM LINEAGE-LINKED\n`;
-      activeMembers.forEach(m => {
-        ged += `0 @I${m.id}@ INDI\n`;
-        ged += `1 NAME ${m.name.replace(/\//g, '')} /${m.name.split(' ').pop()}/\n`;
-        ged += `1 SEX ${m.gender === 'male' ? 'M' : 'F'}\n`;
-        if (m.born_year) ged += `1 BIRT\n2 DATE ${m.born_year}\n`;
-        if (m.died_year) ged += `1 DEAT\n2 DATE ${m.died_year}\n`;
-      });
-
-      const famMap = {};
-      activeMembers.forEach(m => {
-        const pids = parents.filter(p => p.member_id === m.id).map(p => p.parent_id).sort();
-        if (pids.length > 0) {
-          const key = pids.join('_');
-          if (!famMap[key]) famMap[key] = [];
-          famMap[key].push(m.id);
-        }
-      });
-
-      Object.entries(famMap).forEach(([pids, children], idx) => {
-        const ids = pids.split('_');
-        ged += `0 @F${idx+1}@ FAM\n`;
-        ids.forEach(pid => {
-          const p = activeMembers.find(m => m.id == pid);
-          if (p) {
-            if (p.gender === 'male') ged += `1 HUSB @I${p.id}@\n`;
-            else ged += `1 WIFE @I${p.id}@\n`;
-          }
-        });
-        children.forEach(cid => { ged += `1 CHIL @I${cid}@\n`; });
-      });
-      ged += `0 TRLR\n`;
-
-      const blob = new Blob([ged], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); 
-      a.href = url; 
-      a.download = 'family-tree-view.ged';
-      a.click();
-      toast('✅ Data GEDCOM diekspor');
-      setShowExport(false);
-    } catch(e) { toast('❌ Gagal ekspor GEDCOM'); }
-  };
-
-  const handleExportSvg = () => {
-    try {
-      const originalSvg = containerRef.current.querySelector('svg');
-      if (!originalSvg) return;
-      
-      const svgCopy = originalSvg.cloneNode(true);
-      const g = svgCopy.querySelector('g');
-      if (!g) return;
-      
-      // Get the bounding box of the content
-      // Since cloneNode doesn't have a layout, we must use the original's bbox
-      const originalG = originalSvg.querySelector('g');
-      const bbox = originalG.getBBox();
-      
-      // Reset transform on top-level g in copy to export the full thing cleanly
-      g.removeAttribute('transform');
-      
-      const padding = 20;
-      svgCopy.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + padding*2} ${bbox.height + padding*2}`);
-      svgCopy.setAttribute('width', bbox.width + padding*2);
-      svgCopy.setAttribute('height', bbox.height + padding*2);
-      svgCopy.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-      
-      // Add white background
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', bbox.x - padding);
-      rect.setAttribute('y', bbox.y - padding);
-      rect.setAttribute('width', bbox.width + padding*2);
-      rect.setAttribute('height', bbox.height + padding*2);
-      rect.setAttribute('fill', '#ffffff');
-      svgCopy.insertBefore(rect, svgCopy.firstChild);
-
-      const svgData = new XMLSerializer().serializeToString(svgCopy);
-      const blob = new Blob([svgData], { type: 'image/svg+xml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'family-tree-view.svg';
-      a.click();
-      toast('✅ SVG diekspor');
-      setShowExport(false);
-    } catch(e) { 
-      console.error(e);
-      toast('❌ Gagal ekspor SVG'); 
+  const handleFullscreen = () => {
+    const el = containerRef.current.parentElement.parentElement;
+    if (!document.fullscreenElement) {
+      if (el.requestFullscreen) el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
     }
   };
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      {/* Export Button */}
-      <div className="export-container" style={{ position: 'absolute', top: isMobile ? 8 : 16, left: isMobile ? 8 : 16, zIndex: 50 }}>
+      {/* Fullscreen Button */}
+      <div style={{ position: 'absolute', bottom: isMobile ? 12 : 20, right: isMobile ? 12 : 20, zIndex: 100, opacity: 0.5 }}>
         <button 
-          onClick={() => setShowExport(!showExport)}
+          onClick={handleFullscreen}
           style={{ 
-            display: 'flex', alignItems: 'center', gap: isMobile ? 4 : 8, padding: isMobile ? '6px 10px' : '8px 14px', borderRadius: 10, 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', width: isMobile ? 36 : 40, height: isMobile ? 36 : 40, borderRadius: 10, 
             background: '#fff', border: '1.5px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-            cursor: 'pointer', fontSize: isMobile ? 11 : 13, fontWeight: 700, color: '#475569', transition: 'all 0.2s'
+            cursor: 'pointer', transition: 'all 0.2s', padding: 0
           }}
+          title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh'}
         >
-          <span>📤 {isMobile ? '' : 'Ekspor'}</span>
-          <span style={{ fontSize: 10, opacity: 0.6 }}>▼</span>
+          {isFullscreen ? (
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: isMobile ? 18 : 20, height: isMobile ? 18 : 20 }}>
+              <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: isMobile ? 18 : 20, height: isMobile ? 18 : 20 }}>
+              <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+            </svg>
+          )}
         </button>
-
-        {showExport && (
-          <div style={{ 
-            position: 'absolute', top: '100%', left: 0, marginTop: 8, background: '#fff', 
-            borderRadius: 12, border: '1.5px solid #e2e8f0', boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
-            minWidth: 180, overflow: 'hidden', zIndex: 100
-          }}>
-            <div 
-              onClick={handleExportJson}
-              style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 12, fontWeight: 600, borderBottom: '1px solid #f1f5f9', color: '#6366f1' }}
-              onMouseOver={(e) => e.target.style.background = '#f5f3ff'}
-              onMouseOut={(e) => e.target.style.background = 'transparent'}
-            >
-              EKSPOR JSON
-            </div>
-            <div 
-              onClick={handleExportGedcom}
-              style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 12, fontWeight: 600, borderBottom: '1px solid #f1f5f9', color: '#10b981' }}
-              onMouseOver={(e) => e.target.style.background = '#f0fdf4'}
-              onMouseOut={(e) => e.target.style.background = 'transparent'}
-            >
-              EKSPOR GEDCOM
-            </div>
-            <div 
-              onClick={handleExportSvg}
-              style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#ef4444' }}
-              onMouseOver={(e) => e.target.style.background = '#fef2f2'}
-              onMouseOut={(e) => e.target.style.background = 'transparent'}
-            >
-              EKSPOR SVG (VISUAL)
-            </div>
-          </div>
-        )}
       </div>
 
       <div style={{ flex: 1, position: 'relative' }}>
