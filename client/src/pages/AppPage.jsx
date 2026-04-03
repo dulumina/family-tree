@@ -183,78 +183,136 @@ export default function AppPage() {
       {/* Toolbar */}
       <div style={{ 
         background:'#fff', 
-        padding: isMobile ? '6px 10px' : '10px 20px', 
+        padding: isMobile ? '10px 12px' : '12px 24px', 
         display:'flex', 
-        gap: isMobile ? 6 : 12, 
-        alignItems:'center', 
-        flexWrap:'wrap', 
+        flexDirection: isMobile ? 'column' : 'row',
+        justifyContent: 'space-between',
+        alignItems: isMobile ? 'stretch' : 'center', 
+        gap: isMobile ? 8 : 16,
         borderBottom:'1px solid #f1f5f9', 
         boxShadow:'0 1px 4px #0001',
         position: 'sticky',
         top: isMobile ? 88 : 105, 
         zIndex: 105
       }}>
-        {/* Row 1: Family & Actions */}
-        <div style={{ display: 'flex', width: isMobile ? '100%' : 'auto', gap: 6, flex: isMobile ? 'none' : 'none', order: 1 }}>
-          <div style={{ position: 'relative', flex: 1 }}>
-            <button onClick={() => {
-                const d = document.getElementById('family-dropdown');
-                d.style.display = d.style.display === 'none' ? 'block' : 'none';
-              }}
-              style={{ width: '100%', padding: isMobile ? '7px 10px' : '8px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', fontSize:isMobile ? 12 : 13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent: 'space-between', gap:4 }}>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>👨‍👩‍👧‍👦 {families[activeFamilyIndex] ? (isMobile ? families[activeFamilyIndex].root.name : `Keluarga ${families[activeFamilyIndex].root.name}`) : 'Pilih'}</span>
-              <span style={{ fontSize:10 }}>▼</span>
-            </button>
-            <div id="family-dropdown" style={{ display:'none', position:'absolute', top:'100%', left:0, right: 0, background:'#fff', border:'1.5px solid #e2e8f0', borderRadius:12, marginTop:8, padding:10, boxShadow:'0 10px 25px #0002', zIndex:1001, minWidth:200 }}>
-              <div style={{ maxHeight: 300, overflowY: 'auto' }}>
-                {families.map((fam, idx) => (
-                  <div key={idx} onClick={() => { setActiveFamilyIndex(idx); document.getElementById('family-dropdown').style.display = 'none'; }}
-                    style={{ padding:'8px 12px', borderRadius:8, cursor:'pointer', fontSize:13, background: activeFamilyIndex === idx ? '#f5f3ff' : 'transparent', color: activeFamilyIndex === idx ? '#6366f1' : '#475569', fontWeight: activeFamilyIndex === idx ? 600 : 400, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>Keluarga {fam.root.name}</span>
-                    <span style={{ fontSize:11, opacity:0.7 }}>({fam.members.length})</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
+        {/* Actions & Family Filter Row on Mobile / Actions on Desktop */}
+        <div style={{ 
+          display: 'flex', 
+          gap: 8, 
+          flex: isMobile ? 'none' : 'none',
+          alignItems: 'center'
+        }}>
           {isEditor && (
             <button onClick={()=>{setEditTarget(null);setShowForm(true);}}
-              style={{ padding: isMobile ? '0 12px' : '8px 12px', borderRadius:10, border:'none', background:'linear-gradient(135deg,#10b981,#059669)', color:'#fff', fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', fontSize: isMobile ? 12 : 14 }}>
-              {isMobile ? '+ Anggota' : '+ Tambah Anggota'}
+              style={{ padding: '8px 12px', borderRadius:12, border:'none', background:'#10b981', color:'#fff', fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)' }}>
+              <span>+</span> {isMobile ? 'Anggota' : 'Tambah Anggota'}
             </button>
           )}
 
           {!isEditor && (
             <button onClick={() => { setFeedbackMemberId(null); setShowFeedback(true); }}
-              style={{ width: isMobile ? 36 : 'auto', height: isMobile ? 36 : 'auto', padding: isMobile ? '0' : '8px 14px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', color:'#6366f1', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent: 'center', gap:6 }}>
-              <span>💡</span>
-              {!isMobile && <span>Saran / Kritik</span>}
+              style={{ padding: '8px 12px', borderRadius:12, border:'1.5px solid #e2e8f0', background:'#fff', color:'#6366f1', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+              <span>💡</span> {!isMobile && <span>Saran / Kritik</span>}
             </button>
           )}
-        </div>
 
-        {/* Row 2: Search */}
-        <div className="search-container" style={{ position:'relative', flex: isMobile ? '1 1 100%' : 1, minWidth: isMobile ? '100%': 200, order: 2 }}>
-          <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)' }}>🔍</span>
-          <input value={search} onChange={e=>{ setSearch(e.target.value); setShowSearchResults(true); }} placeholder={isMobile ? "Cari anggota..." : "Cari anggota keluarga..."}
-            onFocus={() => setShowSearchResults(true)}
-            style={{ width:'100%', padding: isMobile ? '7px 12px 7px 34px' : '8px 12px 8px 34px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:14, outline:'none', boxSizing:'border-box' }} />
-          {showSearchResults && searchResults.length > 0 && (
-            <div style={{ position:'absolute', top:'105%', left:0, right:0, background:'#fff', border:'1px solid #e2e8f0', borderRadius:12, boxShadow:'0 10px 25px #0002', zIndex:1000, overflow:'hidden' }}>
-              {searchResults.map(m => (
-                <div key={m.id} onClick={() => { setFocusMemberId(m.id); setSearch(''); setShowSearchResults(false); setSelected(m); }}
-                  style={{ padding: isMobile ? '8px 12px' : '10px 14px', cursor:'pointer', fontSize:14, borderBottom:'1px solid #f1f5f9', display:'flex', alignItems:'center', gap:10 }}>
-                  <span style={{ fontSize:18 }}>{m.photo}</span>
-                  <div style={{ display:'flex', flexDirection:'column' }}>
-                    <span style={{ fontWeight:600, color:'#1e293b' }}>{m.name}</span>
-                    <span style={{ fontSize:11, color:'#64748b' }}>{genLabel(m.generation)} • {m.born_year || '?'}</span>
-                  </div>
+          {/* On Mobile, put Family Filter here too */}
+          {isMobile && (
+            <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+              <button onClick={() => {
+                  const d = document.getElementById('family-dropdown');
+                  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+                }}
+                style={{ width: '100%', padding: '8px 10px', borderRadius:12, border:'1.5px solid #e2e8f0', background:'#fff', fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent: 'space-between', gap:4 }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>👨‍👩‍👧‍👦 {families[activeFamilyIndex]?.root.name || 'Pilih'}</span>
+                <span style={{ fontSize:8, opacity: 0.5 }}>▼</span>
+              </button>
+              <div id="family-dropdown" style={{ display:'none', position:'absolute', top:'110%', left: 0, right: 0, background:'#fff', border:'1px solid #e2e8f0', borderRadius:16, padding:8, boxShadow:'0 12px 30px #0002', zIndex:1001 }}>
+                <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+                  {families.map((fam, idx) => (
+                    <div key={idx} onClick={() => { setActiveFamilyIndex(idx); document.getElementById('family-dropdown').style.display = 'none'; }}
+                      style={{ padding:'10px 14px', borderRadius:10, cursor:'pointer', fontSize:13, background: activeFamilyIndex === idx ? '#f5f3ff' : 'transparent', color: activeFamilyIndex === idx ? '#6366f1' : '#475569', fontWeight: activeFamilyIndex === idx ? 600 : 400, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                      <span>Keluarga {fam.root.name}</span>
+                      <span style={{ fontSize:11, opacity:0.5 }}>{fam.members.length}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           )}
         </div>
+
+        {/* Filters & Search - Desktop view (visible as second row on mobile) */}
+        {!isMobile && (
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <div style={{ position: 'relative', width: 220 }}>
+              <button onClick={() => {
+                  const d = document.getElementById('family-dropdown');
+                  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+                }}
+                style={{ width: '100%', padding: '9px 12px', borderRadius:12, border:'1.5px solid #e2e8f0', background:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent: 'space-between', gap:8 }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>👨‍👩‍👧‍👦 {families[activeFamilyIndex] ? `Keluarga ${families[activeFamilyIndex].root.name}` : 'Pilih'}</span>
+                <span style={{ fontSize:10, opacity: 0.5 }}>▼</span>
+              </button>
+              <div id="family-dropdown" style={{ display:'none', position:'absolute', top:'110%', right: 0, background:'#fff', border:'1px solid #e2e8f0', borderRadius:16, padding:8, boxShadow:'0 12px 30px #0002', zIndex:1001, minWidth:240 }}>
+                <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+                  {families.map((fam, idx) => (
+                    <div key={idx} onClick={() => { setActiveFamilyIndex(idx); document.getElementById('family-dropdown').style.display = 'none'; }}
+                      style={{ padding:'10px 14px', borderRadius:10, cursor:'pointer', fontSize:13, background: activeFamilyIndex === idx ? '#f5f3ff' : 'transparent', color: activeFamilyIndex === idx ? '#6366f1' : '#475569', fontWeight: activeFamilyIndex === idx ? 600 : 400, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                      <span>Keluarga {fam.root.name}</span>
+                      <span style={{ fontSize:11, opacity:0.5 }}>{fam.members.length}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="search-container" style={{ position:'relative', width: 250 }}>
+              <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', opacity: 0.5 }}>🔍</span>
+              <input value={search} onChange={e=>{ setSearch(e.target.value); setShowSearchResults(true); }} placeholder="Cari anggota keluarga..."
+                onFocus={() => setShowSearchResults(true)}
+                style={{ width:'100%', padding: '9px 12px 9px 36px', borderRadius:12, border:'1.5px solid #e2e8f0', fontSize:14, outline:'none', boxSizing:'border-box' }} />
+              {showSearchResults && searchResults.length > 0 && (
+                <div style={{ position:'absolute', top:'110%', left:0, right:0, background:'#fff', border:'1px solid #e2e8f0', borderRadius:16, boxShadow:'0 12px 30px #0002', zIndex:1000, overflow:'hidden' }}>
+                  {searchResults.map(m => (
+                    <div key={m.id} onClick={() => { setFocusMemberId(m.id); setSearch(''); setShowSearchResults(false); setSelected(m); }}
+                      style={{ padding: '12px 16px', cursor:'pointer', fontSize:14, borderBottom:'1px solid #f1f5f9', display:'flex', alignItems:'center', gap:12 }}>
+                      <span style={{ fontSize:20 }}>{m.photo}</span>
+                      <div style={{ display:'flex', flexDirection:'column' }}>
+                        <span style={{ fontWeight:600, color:'#1e293b' }}>{m.name}</span>
+                        <span style={{ fontSize:11, color:'#64748b' }}>{genLabel(m.generation)} • {m.born_year || '?'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Search Bar - Separate row on Mobile */}
+        {isMobile && (
+          <div className="search-container" style={{ position:'relative', width: '100%' }}>
+            <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', opacity: 0.5 }}>🔍</span>
+            <input value={search} onChange={e=>{ setSearch(e.target.value); setShowSearchResults(true); }} placeholder="Cari anggota..."
+              onFocus={() => setShowSearchResults(true)}
+              style={{ width:'100%', padding: '8px 12px 8px 36px', borderRadius:12, border:'1.5px solid #e2e8f0', fontSize:13, outline:'none', boxSizing:'border-box' }} />
+            {showSearchResults && searchResults.length > 0 && (
+              <div style={{ position:'absolute', top:'110%', left:0, right:0, background:'#fff', border:'1px solid #e2e8f0', borderRadius:16, boxShadow:'0 12px 30px #0002', zIndex:1000, overflow:'hidden' }}>
+                {searchResults.map(m => (
+                  <div key={m.id} onClick={() => { setFocusMemberId(m.id); setSearch(''); setShowSearchResults(false); setSelected(m); }}
+                    style={{ padding: '12px 16px', cursor:'pointer', fontSize:14, borderBottom:'1px solid #f1f5f9', display:'flex', alignItems:'center', gap:12 }}>
+                    <span style={{ fontSize:20 }}>{m.photo}</span>
+                    <div style={{ display:'flex', flexDirection:'column' }}>
+                      <span style={{ fontWeight:600, color:'#1e293b' }}>{m.name}</span>
+                      <span style={{ fontSize:11, color:'#64748b' }}>{genLabel(m.generation)} • {m.born_year || '?'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Content */}
