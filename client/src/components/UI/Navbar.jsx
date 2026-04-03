@@ -18,10 +18,10 @@ export default function Navbar({ tab, setTab }) {
   return (
     <header style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', boxShadow: '0 2px 16px #0003', position: 'sticky', top: 0, zIndex: 1100 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '0 12px' : '0 24px', height: isMobile ? 52 : 58 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10 }}>
+        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10, textDecoration: 'none', cursor: 'pointer' }}>
           <span style={{ fontSize: isMobile ? 22 : 26, animation: 'float 3s ease-in-out infinite', display: 'inline-block' }}>🌳</span>
           <span style={{ color: '#fff', fontWeight: 700, fontSize: isMobile ? 14 : 17, whiteSpace: 'nowrap' }}>Silsilah Keluarga</span>
-        </div>
+        </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 12 }}>
           {isAdmin && !isMobile && <span style={{ background: '#f59e0b', color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>ADMIN</span>}
           <span style={{ color: '#e2e8f0', fontSize: isMobile ? 11 : 13, maxWidth: isMobile ? 80 : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>👤 {user?.name}</span>
