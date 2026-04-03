@@ -4,10 +4,10 @@ const auth = require('../middleware/auth');
 
 function generateAvatar(m) {
   const gender = m.gender; // 'male' or 'female'
-  const isDead = !!m.died_year;
+  const isDead = m.is_alive === 0 || !!m.died_year || !!m.death_date;
   
-  const born = parseInt(m.born_year, 10);
-  const died = parseInt(m.died_year, 10);
+  const born = m.birth_date ? new Date(m.birth_date).getFullYear() : parseInt(m.born_year, 10);
+  const died = m.death_date ? new Date(m.death_date).getFullYear() : parseInt(m.died_year, 10);
   const currentYear = new Date().getFullYear();
   
   let age = null;
@@ -16,14 +16,11 @@ function generateAvatar(m) {
   }
 
   if (age !== null) {
-    if (age <= 12) {
-      if (age <= 3) return '👶';
-      return gender === 'male' ? '👦' : '👧';
-    } else if (age >= 55) {
-      return gender === 'male' ? '👴' : '👵';
-    } else {
-      return gender === 'male' ? '👨' : '👩';
-    }
+    if (age <= 5) return '👶';
+    if (age <= 12) return gender === 'male' ? '👦' : '👧';
+    if (age <= 17) return '🧑'; // Remaja
+    if (age >= 60) return gender === 'male' ? '👴' : '👵';
+    return gender === 'male' ? '👨' : '👩';
   }
 
   return gender === 'male' ? '👨' : '👩';
@@ -71,14 +68,26 @@ router.get('/:id', auth(), (req, res) => {
 
 // POST /api/members
 router.post('/', auth('editor'), (req, res) => {
-  const { name,gender,born_year,died_year,photo,generation,notes,spouse_id,parentIds=[] } = req.body;
+  const { 
+    name, gender, born_year, died_year, photo, generation, notes, spouse_id, parentIds = [],
+    birth_place, birth_date, is_alive, death_date, burial_place
+  } = req.body;
   if (!name || !gender) return res.status(400).json({ error: 'Nama dan gender wajib diisi' });
+
+  // Auto-calculate year from date if missing
+  const bYear = born_year || (birth_date ? new Date(birth_date).getFullYear().toString() : null);
+  const dYear = died_year || (death_date ? new Date(death_date).getFullYear().toString() : null);
 
   try {
     const r = db.prepare(
-      `INSERT INTO members (name,gender,born_year,died_year,photo,generation,notes,spouse_id,created_by)
-       VALUES (?,?,?,?,?,?,?,?,?)`
-    ).run(name,gender,born_year||null,died_year||null,photo||'🧑',generation||0,notes||null,spouse_id||null,req.user.id);
+      `INSERT INTO members (
+        name, gender, born_year, died_year, photo, generation, notes, spouse_id, created_by,
+        birth_place, birth_date, is_alive, death_date, burial_place
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    ).run(
+      name, gender, bYear, dYear, photo || '🧑', generation || 0, notes || null, spouse_id || null, req.user.id,
+      birth_place || null, birth_date || null, is_alive === undefined ? 1 : is_alive, death_date || null, burial_place || null
+    );
 
     const newId = r.lastInsertRowid;
 
@@ -103,20 +112,34 @@ router.post('/', auth('editor'), (req, res) => {
 
 // PUT /api/members/:id
 router.put('/:id', auth('editor'), (req, res) => {
-  const { name,gender,born_year,died_year,photo,generation,notes,spouse_id,parentIds=[] } = req.body;
+  const { 
+    name, gender, born_year, died_year, photo, generation, notes, spouse_id, parentIds = [],
+    birth_place, birth_date, is_alive, death_date, burial_place
+  } = req.body;
   const id = req.params.id;
 
   const existing = db.prepare('SELECT * FROM members WHERE id = ?').get(id);
   if (!existing) return res.status(404).json({ error: 'Tidak ditemukan' });
+
+  // Auto-calculate year from date if missing
+  const bYear = born_year || (birth_date ? new Date(birth_date).getFullYear().toString() : null);
+  const dYear = died_year || (death_date ? new Date(death_date).getFullYear().toString() : null);
 
   // Remove old spouse link
   if (existing.spouse_id && existing.spouse_id !== spouse_id)
     db.prepare('UPDATE members SET spouse_id = NULL WHERE id = ?').run(existing.spouse_id);
 
   db.prepare(
-    `UPDATE members SET name=?,gender=?,born_year=?,died_year=?,photo=?,generation=?,
-     notes=?,spouse_id=?,updated_at=datetime('now') WHERE id=?`
-  ).run(name,gender,born_year||null,died_year||null,photo||'🧑',generation||0,notes||null,spouse_id||null,id);
+    `UPDATE members SET 
+      name=?, gender=?, born_year=?, died_year=?, photo=?, generation=?,
+      notes=?, spouse_id=?, birth_place=?, birth_date=?, is_alive=?, 
+      death_date=?, burial_place=?, updated_at=datetime('now') 
+     WHERE id=?`
+  ).run(
+    name, gender, bYear, dYear, photo || '🧑', generation || 0, 
+    notes || null, spouse_id || null, birth_place || null, birth_date || null, 
+    is_alive === undefined ? 1 : is_alive, death_date || null, burial_place || null, id
+  );
 
   if (spouse_id)
     db.prepare('UPDATE members SET spouse_id = ? WHERE id = ?').run(id, spouse_id);

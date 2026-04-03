@@ -49,5 +49,10 @@ export const dataApi = {
   clear:        () => api.delete('/data/clear'),
   seed:         () => api.post('/data/seed'),
 };
+export const feedbackApi = {
+  submit:    d => api.post('/feedback', d),
+  getAll:    () => api.get('/feedback'),
+  update:    (id,s) => api.put(`/feedback/${id}`, { status: s }),
+};
 
 export default api;

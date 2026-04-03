@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import useMobile from '../../hooks/useMobile';
 
 export default function MemberList({ members, onEdit, onDelete }) {
   const { isAdmin, isEditor } = useAuth();
+  const isMobile = useMobile();
   const [showSpousesOf, setShowSpousesOf] = useState([]);
 
   // isBlood: true if this person should be the primary card (has parents or is primary in couple)
@@ -39,7 +41,7 @@ export default function MemberList({ members, onEdit, onDelete }) {
             <span style={{ background:'#eef2ff', padding:'2px 10px', borderRadius:6 }}>{genLabel(g)}</span>
             <div style={{ flex:1, height:1, background:'#f1f5f9' }}></div>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:12 }}>
+          <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill,minmax(260px,1fr))', gap:12 }}>
             {filteredMembers.filter(m=>m.generation===g).map(m=>{
               const accent = m.gender==='male'?'#3b82f6':'#ec4899';
               // Find all spouses (handle multiple spouses if any)

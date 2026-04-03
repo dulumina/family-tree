@@ -4,6 +4,7 @@ import { useToast } from '../UI/Toast';
 import * as topola from 'topola';
 import * as d3 from 'd3';
 import { getFamilies } from '../../utils/familyUtils';
+import useMobile from '../../hooks/useMobile';
 
 const TREE_CSS = `
   .detailed text {
@@ -26,6 +27,7 @@ const TREE_CSS = `
 
 export default function DataManage({ members }) {
   const { toast } = useToast();
+  const isMobile = useMobile();
   const [selectedFamilyIndex, setSelectedFamilyIndex] = useState(-1); // -1 means All Families
 
   const families = useMemo(() => getFamilies(members), [members]);
@@ -320,23 +322,23 @@ export default function DataManage({ members }) {
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto' }}>
+    <div style={{ maxWidth: 800, margin: '0 auto', padding: isMobile ? '0 4px' : 0 }}>
       <div style={{ marginBottom: 24 }}>
-        <h3 style={{ margin: '0 0 8px', color:'#1e293b' }}>💾 Manajemen Data</h3>
-        <p style={{ color: '#64748b', fontSize: 14 }}>Kelola cadangan data silsilah keluarga Anda dengan fitur ekspor dan impor.</p>
+        <h3 style={{ margin: '0 0 8px', color:'#1e293b', fontSize: isMobile ? 18 : 22 }}>💾 Manajemen Data</h3>
+        <p style={{ color: '#64748b', fontSize: isMobile ? 12 : 14 }}>Kelola cadangan data silsilah keluarga Anda dengan fitur ekspor dan impor.</p>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:20 }}>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', gap:20 }}>
         
-        <div style={{ background:'#fff', padding:24, borderRadius:20, border:'1.5px solid #e2e8f0', boxShadow:'0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+        <div style={{ background:'#fff', padding: isMobile ? 16 : 24, borderRadius:20, border:'1.5px solid #e2e8f0', boxShadow:'0 10px 15px -3px rgba(0,0,0,0.1)' }}>
           <div style={{ fontWeight:700, color:'#475569', marginBottom:16, display:'flex', alignItems:'center', gap:10 }}>
-            <span style={{ fontSize: 24 }}>📤</span>
+            <span style={{ fontSize: isMobile ? 20 : 24 }}>📤</span>
             <div>
-              <div style={{ fontSize: 16 }}>Ekspor Data</div>
+              <div style={{ fontSize: isMobile ? 14 : 16 }}>Ekspor Data</div>
               <div style={{ fontSize:10, background:'#e2e8f0', padding:'2px 6px', borderRadius:4, width: 'fit-content', marginTop: 2 }}>BACKUP</div>
             </div>
           </div>
-          <p style={{ fontSize:13, color:'#64748b', marginBottom:12, lineHeight: 1.5 }}>Unduh data silsilah keluarga Anda untuk cadangan atau digunakan di aplikasi lain.</p>
+          <p style={{ fontSize: isMobile ? 12 : 13, color:'#64748b', marginBottom:12, lineHeight: 1.5 }}>Unduh data silsilah keluarga Anda untuk cadangan atau digunakan di aplikasi lain.</p>
           
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Pilih Keluarga:</label>
@@ -365,15 +367,15 @@ export default function DataManage({ members }) {
           </div>
         </div>
 
-        <div style={{ background:'#fff', padding:24, borderRadius:20, border:'1.5px solid #e2e8f0', boxShadow:'0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+        <div style={{ background:'#fff', padding: isMobile ? 16 : 24, borderRadius:20, border:'1.5px solid #e2e8f0', boxShadow:'0 10px 15px -3px rgba(0,0,0,0.1)' }}>
           <div style={{ fontWeight:700, color:'#475569', marginBottom:16, display:'flex', alignItems:'center', gap:10 }}>
-            <span style={{ fontSize: 24 }}>📥</span>
+            <span style={{ fontSize: isMobile ? 20 : 24 }}>📥</span>
             <div>
-              <div style={{ fontSize: 16 }}>Impor Data</div>
+              <div style={{ fontSize: isMobile ? 14 : 16 }}>Impor Data</div>
               <div style={{ fontSize:10, background:'#fee2e2', color:'#ef4444', padding:'2px 6px', borderRadius:4, width: 'fit-content', marginTop: 2 }}>BERBAHAYA</div>
             </div>
           </div>
-          <p style={{ fontSize:13, color:'#64748b', marginBottom:20, lineHeight: 1.5 }}>Unggah data silsilah. <strong style={{ color: '#ef4444' }}>Hati-hati:</strong> Ini akan menghapus dan menimpa SEMUA data yang ada saat ini!</p>
+          <p style={{ fontSize: isMobile ? 12 : 13, color:'#64748b', marginBottom:20, lineHeight: 1.5 }}>Unggah data silsilah. <strong style={{ color: '#ef4444' }}>Hati-hati:</strong> Ini akan menghapus dan menimpa SEMUA data!</p>
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             <label style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px', borderRadius:12, background:'#f8fafc', border:'2px dashed #cbd5e1', cursor:'pointer', transition: 'all 0.2s' }}>
               <span style={{ fontSize:20 }}>📄</span>
@@ -390,10 +392,10 @@ export default function DataManage({ members }) {
 
       </div>
 
-      <div style={{ marginTop: 24, background:'#fff', padding:24, borderRadius:20, border:'1.5px solid #e2e8f0', boxShadow:'0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+      <div style={{ marginTop: 24, background:'#fff', padding: isMobile ? 16 : 24, borderRadius:20, border:'1.5px solid #e2e8f0', boxShadow:'0 10px 15px -3px rgba(0,0,0,0.1)' }}>
         <div style={{ fontWeight:700, color:'#475569', marginBottom:16, display:'flex', alignItems:'center', gap:10 }}>
-          <span style={{ fontSize: 24 }}>🛠️</span>
-          <div style={{ fontSize: 16 }}>Pemeliharaan Sistem</div>
+          <span style={{ fontSize: isMobile ? 20 : 24 }}>🛠️</span>
+          <div style={{ fontSize: isMobile ? 14 : 16 }}>Pemeliharaan Sistem</div>
         </div>
         <div style={{ display:'flex', flexWrap:'wrap', gap:12 }}>
           <button onClick={handleSeed} style={{ padding:'12px 24px', borderRadius:12, border:'none', background:'#f59e0b', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:13 }}>
