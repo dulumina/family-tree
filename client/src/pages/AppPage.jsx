@@ -178,7 +178,7 @@ export default function AppPage() {
 
   return (
     <div style={{ minHeight:'100vh', background:'#f0f4ff', display:'flex', flexDirection:'column' }}>
-      <Navbar tab={tab} setTab={setTab} />
+      <Navbar tab={tab} setTab={(k) => k === 'feedback_form' ? (setFeedbackMemberId(null), setShowFeedback(true)) : setTab(k)} />
 
       {/* Toolbar */}
       <div style={{ 
@@ -225,11 +225,13 @@ export default function AppPage() {
             </button>
           )}
 
-          <button onClick={() => { setFeedbackMemberId(null); setShowFeedback(true); }}
-            style={{ width: isMobile ? 36 : 'auto', height: isMobile ? 36 : 'auto', padding: isMobile ? '0' : '8px 14px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', color:'#6366f1', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent: 'center', gap:6 }}>
-            <span>💡</span>
-            {!isMobile && <span>Saran / Kritik</span>}
-          </button>
+          {!isEditor && (
+            <button onClick={() => { setFeedbackMemberId(null); setShowFeedback(true); }}
+              style={{ width: isMobile ? 36 : 'auto', height: isMobile ? 36 : 'auto', padding: isMobile ? '0' : '8px 14px', borderRadius:10, border:'1.5px solid #e2e8f0', background:'#fff', color:'#6366f1', fontSize:14, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent: 'center', gap:6 }}>
+              <span>💡</span>
+              {!isMobile && <span>Saran / Kritik</span>}
+            </button>
+          )}
         </div>
 
         {/* Row 2: Search */}
@@ -329,12 +331,14 @@ export default function AppPage() {
                         </div>
                       ))}
                       
-                      <div style={{ marginTop: 12, marginBottom: 12 }}>
-                        <button onClick={() => { setFeedbackMemberId(selected.id); setShowFeedback(true); }}
-                          style={{ width:'100%', padding:'6px', borderRadius:8, border:'1.5px dashed #cbd5e1', background:'transparent', color:'#64748b', fontSize:11, fontWeight:600, cursor:'pointer' }}>
-                          💡 Laporkan Koreksi Data
-                        </button>
-                      </div>
+                      {!isEditor && (
+                        <div style={{ marginTop: 12, marginBottom: 12 }}>
+                          <button onClick={() => { setFeedbackMemberId(selected.id); setShowFeedback(true); }}
+                            style={{ width:'100%', padding:'6px', borderRadius:8, border:'1.5px dashed #cbd5e1', background:'transparent', color:'#64748b', fontSize:11, fontWeight:600, cursor:'pointer' }}>
+                            💡 Laporkan Koreksi Data
+                          </button>
+                        </div>
+                      )}
 
                       {selected.notes && <div style={{ marginTop:10, padding:10, background:'#f8fafc', borderRadius:8, fontSize:12, color:'#64748b', fontStyle:'italic' }}>{selected.notes}</div>}
                       

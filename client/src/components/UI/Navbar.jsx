@@ -3,7 +3,7 @@ import { useState } from 'react';
 import useMobile from '../../hooks/useMobile';
 
 export default function Navbar({ tab, setTab }) {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isEditor } = useAuth();
   const isMobile = useMobile();
   const tabs = [
     ['tree', '🌲', isMobile ? 'Pohon' : 'Silsilah'], 
@@ -12,7 +12,8 @@ export default function Navbar({ tab, setTab }) {
       ['admin', '👥', isMobile ? 'Admin' : 'Pengguna'], 
       ['data', '💾', isMobile ? 'Data' : 'Database'],
       ['feedback', '📥', isMobile ? 'Saran' : 'Saran / Kritik']
-    ] : [])
+    ] : []),
+    ...(!isEditor ? [['feedback_form', '💡', isMobile ? 'Saran' : 'Saran / Kritik']] : [])
   ];
   return (
     <header style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', boxShadow: '0 2px 16px #0003', position: 'sticky', top: 0, zIndex: 1100 }}>
